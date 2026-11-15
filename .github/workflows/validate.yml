@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +26,10 @@ jobs:
               def handle_starttag(self,t,a): self.tags.add(t)
           p=Check();p.feed(s)
           assert {'html','head','body'}.issubset(p.tags)
-          scripts=re.findall(r'<script\\b[^>]*>(.*?)</script\\s*>',s,re.I|re.S)
-          Path('/tmp/inline.js').write_text('\n;\n'.join(x for x in scripts if 'use strict' in x),encoding='utf-8')
+          scripts=re.findall(r'<script\b[^>]*>(.*?)</script\s*>',s,re.I|re.S)
+          app_scripts = [script for script in scripts if 'use strict' in script]
+          assert app_scripts, 'No inline application script found'
+          Path('/tmp/inline.js').write_text('\n;\n'.join(app_scripts), encoding='utf-8')
           PY
           node --check /tmp/inline.js
       - name: Install Chromium test runner
