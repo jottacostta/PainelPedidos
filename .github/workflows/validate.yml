@@ -1,61 +1,42 @@
 name: Validate
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Check HTML structure and inline JavaScript syntax
-        shell: bash
+      - name: Check HTML and JavaScript syntax
         run: |
           python3 - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
           import re
-          p = Path('index.html')
-          if not p.is_file() or p.stat().st_size == 0:
-              raise SystemExit('index.html ausente ou vazio')
-          text = p.read_text(encoding='utf-8-sig')
+          s=Path('index.html').read_text(encoding='utf-8-sig')
           class Check(HTMLParser):
-              def __init__(self):
-                  super().__init__(convert_charrefs=True)
-                  self.html = self.head = self.body = False
-              def handle_starttag(self, tag, attrs):
-                  if tag == 'html': self.html = True
-                  if tag == 'head': self.head = True
-                  if tag == 'body': self.body = True
-          parser = Check()
-          parser.feed(text)
-          parser.close()
-          if not all((parser.html, parser.head, parser.body)):
-              raise SystemExit('Estrutura HTML básica inválida: esperado html, head e body')
-          scripts = []
-          for match in re.finditer(r'<script\b([^>]*)>(.*?)</script\s*>', text, flags=re.I | re.S):
-              attrs, body = match.group(1), match.group(2)
-              if re.search(r'\bsrc\s*=', attrs, re.I):
-                  continue
-              kind = re.search(r'\btype\s*=\s*[\"\']([^\"\']+)', attrs, re.I)
-              mime = kind.group(1).lower() if kind else 'text/javascript'
-              if mime in ('text/javascript', 'application/javascript', 'module', 'application/ecmascript', 'text/ecmascript'):
-                  scripts.append(body)
-          Path('/tmp/inline-scripts').mkdir(exist_ok=True)
-          for i, script in enumerate(scripts):
-              Path(f'/tmp/inline-scripts/{i}.js').write_text(script, encoding='utf-8')
-          print(f'HTML básico OK; {len(scripts)} bloco(s) de script inline encontrados.')
+              def __init__(self): super().__init__(); self.tags=set()
+              def handle_starttag(self,t,a): self.tags.add(t)
+          p=Check();p.feed(s)
+          assert {'html','head','body'}.issubset(p.tags)
+          scripts=re.findall(r'<script\b[^>]*>(.*?)</script\s*>',s,re.I|re.S)
+          app_scripts = [script for script in scripts if 'use strict' in script]
+          assert app_scripts, 'No inline application script found'
+          Path('/tmp/inline.js').write_text('\n;\n'.join(app_scripts), encoding='utf-8')
           PY
-          for file in /tmp/inline-scripts/*.js; do
-            [ -e "$file" ] || continue
-            node --check "$file"
-          done
+          node --check /tmp/inline.js
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run browser regression tests
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/server.log 2>&1 &
+          node tests/smoke.cjs
