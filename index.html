@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f4d21f">
-<title>JBS Reposição — Offline</title>
+<title>PainelPedidos | JBS Reposição</title>
 <style>
 :root{--yellow:#f4d21f;--ink:#20252b;--muted:#68717c;--line:#dfe3e8;--bg:#f3f5f7;--white:#fff;--green:#198754;--red:#b42318}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px Arial,Helvetica,sans-serif}
@@ -282,6 +282,118 @@ table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th{p
  }
  main.desktop-layout .logistics-panel .pager{justify-content:flex-end}
  main.desktop-layout #logisticsPrint{display:none}
+}
+
+/* V22 — PAINEL COMERCIAL: design system e grid com áreas explícitas.
+   Aplicado apenas em tela; impressão CPD permanece intocada. */
+@media screen {
+ :root{--bg:#eef2f6;--ink:#162536;--muted:#617184;--line:#dbe3eb;--yellow:#f4cf25;--green:#16815a}
+ body{background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.45}
+ header{position:relative;background:#172b3f;color:#fff;border:0;border-bottom:5px solid var(--yellow);padding:20px max(18px,calc((100vw - 1550px)/2));box-shadow:0 3px 14px #1422351a}
+ header .brand{font-size:clamp(19px,2vw,26px);font-weight:850;letter-spacing:.01em}
+ header .sub{color:#dce7f1;letter-spacing:.09em;font-size:11px;font-weight:650}
+ main.desktop-layout{max-width:1600px;margin:auto;padding:22px 24px 44px;gap:16px}
+ main.desktop-layout .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:0 4px 18px #192f4710;margin:0;min-width:0}
+ main.desktop-layout h2{font-size:13px;font-weight:850;color:#23364a;letter-spacing:.045em;margin:0 0 14px}
+ main.desktop-layout .small{font-size:12px;line-height:1.5}
+ main.desktop-layout button,main.desktop-layout .filebtn{min-height:44px;padding:10px 14px;border-radius:9px;font-size:12px;font-weight:750;letter-spacing:.005em}
+ main.desktop-layout button:focus-visible,main.desktop-layout .filebtn:focus-visible,main.desktop-layout input:focus-visible,main.desktop-layout select:focus-visible{outline:3px solid #2c75c9;outline-offset:2px}
+ main.desktop-layout button:hover:not(:disabled),main.desktop-layout .filebtn:hover{filter:brightness(.97)}
+ main.desktop-layout .operation-panel .actions{gap:10px}
+ main.desktop-layout .operation-panel .filebtn.primary{background:#1a4264;color:white;border-color:#1a4264}
+ main.desktop-layout .operation-panel .actions button.good{background:#167f58;border-color:#167f58}
+ main.desktop-layout .params-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+ main.desktop-layout .params-grid .param-field>span:first-child{font-size:12px;white-space:normal}
+ main.desktop-layout .params-grid input{width:100%;max-width:95px;padding:10px;font-size:15px}
+ main.desktop-layout .params-grid #applyParams{grid-column:1/-1}
+ main.desktop-layout .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;min-width:0;height:auto}
+ main.desktop-layout .kpi{background:#fff;border:1px solid var(--line);border-top:4px solid #e9be18;border-radius:13px;padding:18px 15px;box-shadow:0 3px 12px #172b3f0a;min-height:112px}
+ main.desktop-layout .kpi span{font-size:11px;line-height:1.4;color:#586a7d;letter-spacing:.025em}
+ main.desktop-layout .kpi b{font-size:clamp(20px,2.2vw,30px);margin-top:13px;line-height:1.2}
+ main.desktop-layout .kpi-rupture{border:2px solid #d92d20!important;border-top:4px solid #b42318!important;background:#fff0ef!important}
+ main.desktop-layout .stats-reminder{padding:13px 18px;border:1px solid #ecd78c;border-left:5px solid #d7a514;background:#fff9e5;border-radius:10px;color:#6b4b05;font-weight:750}
+ main.desktop-layout #diagnostics{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+ main.desktop-layout .diag{background:#f5f8fb;border:1px solid #e5ebf1;padding:13px;border-radius:10px;font-size:12px}
+ main.desktop-layout .diag b{font-size:19px}
+ main.desktop-layout .filters-panel{position:static;overflow:visible;max-height:none}
+ main.desktop-layout .filters{display:flex;flex-wrap:wrap;gap:8px}
+ main.desktop-layout .filters button,main.desktop-layout .filters button:first-child{flex:0 1 auto;min-width:95px;max-width:100%;padding:9px 12px}
+ main.desktop-layout .supplier-filter select{width:100%;min-width:0}
+ main.desktop-layout .abc-filter-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+ main.desktop-layout .abc-filter-actions button{min-width:0;min-height:56px;font-size:12px}
+ main.desktop-layout .products-panel .search{width:min(600px,100%);min-height:46px;border-radius:9px}
+ main.desktop-layout .order-filters{padding:13px;gap:14px;background:#f6f8fb;border-radius:10px}
+ main.desktop-layout .tablewrap{width:100%;min-width:0;overflow:auto;max-height:min(65vh,760px);border:1px solid #dae2ea;border-radius:10px}
+ main.desktop-layout table{font-size:12px}
+ main.desktop-layout th{background:#f6d64b;color:#25303b;font-size:11px;letter-spacing:.02em;padding:12px 10px}
+ main.desktop-layout td{padding:11px 10px}
+ main.desktop-layout tbody tr:hover{background:#fff8dc}
+ main.desktop-layout .logistics-summary{gap:12px;margin:14px 0}
+ main.desktop-layout .logistics-summary span{background:#f3f7fa;border:1px solid #e1e8ef;padding:12px 15px;border-radius:10px}
+ main.desktop-layout .pager{gap:10px;justify-content:flex-end}
+ main.desktop-layout .suggestion-actions{gap:14px}
+ main.desktop-layout > footer{width:100%}
+ #logisticsPrint{display:none!important}
+}
+@media screen and (min-width:1100px){
+ main.desktop-layout{
+  display:grid!important;
+  grid-template-columns:minmax(270px,340px) minmax(0,1fr)!important;
+  grid-template-areas:
+   "notice notice"
+   "operations operations"
+   "parameters kpis"
+   "reminder reminder"
+   "diagnostics diagnostics"
+   "filters filters"
+   "abc abc"
+   "products products"
+   "logistics logistics"
+   "suggestions suggestions"
+   "footer footer"!important;
+  align-items:start!important;
+  column-gap:18px;
+  row-gap:18px;
+ }
+ main.desktop-layout > *{width:auto!important;max-width:100%!important;min-width:0}
+ main.desktop-layout #notice{grid-area:notice}
+ main.desktop-layout .operation-panel{grid-area:operations}
+ main.desktop-layout .params-panel{grid-area:parameters}
+ main.desktop-layout #kpis{grid-area:kpis;align-self:stretch}
+ main.desktop-layout .stats-reminder{grid-area:reminder}
+ main.desktop-layout .diagnostics-panel{grid-area:diagnostics}
+ main.desktop-layout .filters-panel{grid-area:filters}
+ main.desktop-layout .abc-filter-panel{grid-area:abc}
+ main.desktop-layout .products-panel{grid-area:products}
+ main.desktop-layout .logistics-panel{grid-area:logistics}
+ main.desktop-layout .suggestions-panel{grid-area:suggestions}
+ main.desktop-layout > footer{grid-area:footer}
+ main.desktop-layout .params-panel{height:100%}
+ main.desktop-layout #kpis{height:100%}
+}
+@media screen and (min-width:721px) and (max-width:1099px){
+ main.desktop-layout{display:flex!important;flex-direction:column!important;align-items:stretch!important;padding:18px}
+ main.desktop-layout > *{width:100%;min-width:0}
+ main.desktop-layout .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+ main.desktop-layout .abc-filter-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media screen and (max-width:720px){
+ header{padding:15px 14px}
+ main.desktop-layout{display:flex!important;flex-direction:column!important;align-items:stretch!important;padding:12px;gap:12px}
+ main.desktop-layout > *{width:100%;min-width:0}
+ main.desktop-layout .panel{padding:16px!important;border-radius:12px}
+ main.desktop-layout .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ main.desktop-layout .kpi{padding:13px 12px;min-height:92px}
+ main.desktop-layout .kpi:last-child{grid-column:span 2}
+ main.desktop-layout .kpi b{font-size:22px}
+ main.desktop-layout #diagnostics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ main.desktop-layout .abc-filter-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ main.desktop-layout .filters button,main.desktop-layout .filters button:first-child{flex:1 1 125px}
+ main.desktop-layout .operation-panel .actions > button,main.desktop-layout .operation-panel .actions > .filebtn{flex:1 1 150px;text-align:center}
+ main.desktop-layout .suggestion-actions{align-items:stretch}
+ main.desktop-layout .suggestion-actions button{width:100%}
+ main.desktop-layout .pager{justify-content:center}
+ main.desktop-layout .tablewrap{max-height:56vh}
 }
 </style>
 </head>
