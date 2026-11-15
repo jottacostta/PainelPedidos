@@ -543,12 +543,18 @@ function emRuptura(p){return p.situacao==="FALTA"||p.situacao==="RUPTURA CD"}
 function pedidoFinalAtual(p){if(semEstoqueCD(p))return 0;return Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?state.manualOrders[p.codigo]:p.pedidoFinalArredondado}
 function alertasProduto(p){
  const cadastro=p.alertasCadastro||[];
- if(!(pedidoFinalAtual(p)<0))return cadastro;
+ const pedido=pedidoFinalAtual(p);
+ if(!(pedido<0))return cadastro;
+ const excedente=Math.abs(pedido);
+ const media=p.mediaVendaCxDia;
+ const diasExcedente=media>0
+  ?`Excedente de ${fmt.format(excedente)} cx equivale a ${fmt.format(excedente/media)} dias de venda pela média do período.`
+  :"Dias de cobertura do excedente indisponíveis: venda média zerada.";
  const estoque=fmt.format(p.estoqueLojaCx);
  const pendente=fmt.format(num(p.pendenteCaixa));
  const transito=fmt.format(num(p.transitoCaixa));
  const necessidade=fmt.format(p.necessidadeCaixa);
- const resumo=`PEDIDO NEGATIVO (cx): estoque loja ${estoque}, pendentes ${pendente}, trânsito ${transito}; necessidade com área de venda ${necessidade}. Sugestão 0.`;
+ const resumo=`PEDIDO NEGATIVO (cx): estoque loja ${estoque}, pendentes ${pendente}, trânsito ${transito}; necessidade com área de venda ${necessidade}. Sugestão 0. ${diasExcedente}`;
  return [resumo,...cadastro];
 }
 function sugestaoAtual(p){const final=pedidoFinalAtual(p),critical=(p.alertasCadastro||[]).includes("SEM CADASTRO MIX")||(p.alertasCadastro||[]).includes("QUANTIDADE POR CAIXA INVÁLIDA");return critical||final==null?0:Math.max(0,final)}
