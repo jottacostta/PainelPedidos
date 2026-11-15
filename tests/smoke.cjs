@@ -1,6 +1,9 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const { pathToFileURL } = require('node:url');
 
 async function checkRuptureCD(page) {
   const base = {
@@ -255,6 +258,37 @@ async function checkScopedABC(page) {
   assert.deepEqual(await hosts(), ['501']);
 }
 
+async function checkHtmlDownload(page) {
+  const downloadLink = browserPage => browserPage.getByRole('link', { name: 'Baixar cópia HTML do painel' });
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), 'painel-download-'));
+  const savedCopy = path.join(folder, 'PainelPedidos.html');
+  const offlinePage = await page.context().newPage();
+
+  try {
+    const downloadPromise = page.waitForEvent('download');
+    await downloadLink(page).click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), 'PainelPedidos.html');
+    await download.saveAs(savedCopy);
+    const original = await fs.readFile(path.join(__dirname, '..', 'index.html'));
+    assert((await fs.readFile(savedCopy)).equals(original));
+
+    await offlinePage.goto(pathToFileURL(savedCopy).href);
+    await offlinePage.waitForFunction(
+      () => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'),
+    );
+    assert.match(await offlinePage.locator('#rows').innerText(), /Importe o ERP/);
+    const localDownloadPromise = offlinePage.waitForEvent('download');
+    await downloadLink(offlinePage).click();
+    const localDownload = await localDownloadPromise;
+    assert.equal(localDownload.suggestedFilename(), 'PainelPedidos.html');
+    assert((await fs.readFile(await localDownload.path())).equals(original));
+  } finally {
+    await offlinePage.close();
+    await fs.rm(folder, { recursive: true, force: true });
+  }
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -334,6 +368,7 @@ async function checkViewport(browser, width) {
       await checkDynamicABC(page);
       await checkInferredFolders(page);
       await checkScopedABC(page);
+      await checkHtmlDownload(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
