@@ -76,7 +76,7 @@ h3 { font-size: 15px; }
 .top-nav a { text-decoration: none; padding: 8px 0; }
 .top-nav a:hover { text-decoration: underline; text-underline-offset: 5px; }
 
-main { width: 100%; max-width: 1512px; margin: auto; padding: 25px 30px 22px; display: grid; gap: 16px; }
+main { width: 100%; max-width: 1512px; margin: auto; padding: 25px 30px 22px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 main > *, .panel { min-width: 0; }
 .hero {
   position: relative; isolation: isolate; overflow: hidden;
@@ -134,7 +134,7 @@ main > *, .panel { min-width: 0; }
 }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
 .panel-head + .small { margin-top: 8px; }
-.product-tools { display: grid; gap: 12px; margin: 16px 0 13px; }
+.product-tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 16px 0 13px; }
 .search-row { display: flex; align-items: center; gap: 10px; }
 .search {
   width: 100%; min-width: 0; color: var(--ink); background: var(--white);
@@ -160,7 +160,7 @@ summary::after {
 details[open] > summary::after { transform: translateY(2px) rotate(225deg); }
 .filters-panel { border: 1px solid var(--line); border-radius: 9px; background: #f7faf8; }
 .filters-panel summary { padding: 0 12px; }
-.filter-content { border-top: 1px solid var(--line); padding: 12px; display: grid; gap: 12px; }
+.filter-content { border-top: 1px solid var(--line); padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .supplier-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .supplier-filter label { font-weight: 700; }
 .supplier-filter select, .param-value input, .edit-modal input {
@@ -168,6 +168,7 @@ details[open] > summary::after { transform: translateY(2px) rotate(225deg); }
   background: var(--white); color: var(--ink); min-width: 0;
 }
 .supplier-filter select { max-width: 100%; }
+.filter-content > * { min-width: 0; }
 .filters, .order-filters, .pager, .support-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .filters button { font-size: 12px; }
 .order-filters { padding-top: 11px; border-top: 1px solid var(--line); gap: 3px 16px; }
@@ -252,6 +253,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   .panel h2 { font-size: 19px; }
   .abc-filter-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .abc-filter-actions button { padding-inline: 8px; font-size: 12px; }
+  .supplier-filter select { width: 100%; }
   .search-row { align-items: stretch; flex-direction: column; gap: 4px; }
   .products-panel th, .products-panel td { padding-inline: 7px; }
   .products-panel :is(th, td):nth-child(2):not([colspan]) {
