@@ -549,7 +549,7 @@ function alertasProduto(p){
  const media=p.mediaVendaCxDia;
  const diasExcedente=media>0
   ?`Excedente de ${fmt.format(excedente)} cx equivale a ${fmt.format(excedente/media)} dias de venda pela média do período.`
-  :"Dias de cobertura do excedente indisponíveis: venda média zerada.";
+  :"Sem estimativa de dias para o excedente: média de vendas igual a zero ou negativa.";
  const estoque=fmt.format(p.estoqueLojaCx);
  const pendente=fmt.format(num(p.pendenteCaixa));
  const transito=fmt.format(num(p.transitoCaixa));
