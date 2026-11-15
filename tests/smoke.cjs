@@ -50,6 +50,39 @@ async function checkRuptureCD(page) {
   assert.doesNotMatch(suggestions, /CD ESGOTADO/);
 }
 
+async function checkERPBoxSize(page) {
+  const codes = ['101', '102', '103', '104'];
+  const base = {
+    mix: codes.map(codigo => ({ codigo, quantidadeCaixa: 6, valorCaixa: 10, pallet: 10 })),
+    abc: codes.map(codigo => ({ codigo, abc: 'A' })),
+    part: codes.map(codigo => ({ codigo, areaVenda: 1 })),
+  };
+  await page.locator('#baseFile').setInputFiles({
+    name: 'bases-test.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(base)),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
+
+  const report = [
+    'Ordem	Chave	Descricao	Qtde Venda	Estoque (Un)	Qtde Ped.Pend (CX)	Qtde Est.Transito (CX)	Est. Deposito (Cx)',
+    '	Total	Total	1440	96	00 x 999,0 + 000	00 x 999,0 + 000	00 x 999,0 + 000',
+    '',
+    ['1', '101', 'PENDENTE E TRANSITO', '360', '24', '00 x 012,0 + 000', '00 x 012,0 + 000', '20 x 001,0 + 000'].join('\t'),
+    ['2', '102', 'SOMENTE TRANSITO', '360', '24', '-*-', '02 x 024,0 + 003', '20 x 001,0 + 000'].join('\t'),
+    ['3', '103', 'DIVERGENCIA', '360', '24', '00 x 012,0 + 000', '00 x 024,0 + 000', '20 x 001,0 + 000'].join('\t'),
+    ['4', '104', 'SEM EMBALAGEM', '360', '24', '-*-', '-*-', '20 x 001,0 + 000'].join('\t'),
+  ].join('\r\n');
+  await page.locator('#erpFile').setInputFiles({
+    name: 'embalagens-test.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
+  const rows = await page.locator('#rows tr').evaluateAll(items =>
+    items.map(row => Array.from(row.cells, cell => cell.textContent)));
+  assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
+  assert.deepEqual(rows.map(row => row[9]), ['6', '2', '—', '—']);
+  assert.match(rows[2][11], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
+  assert.match(rows[3][11], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -123,7 +156,10 @@ async function checkViewport(browser, width) {
     assert(await page.locator('#printTitle').isVisible());
     assert(!(await page.locator('#products').isVisible()));
     await page.emulateMedia({ media: 'screen' });
-    if (width === 1366) await checkRuptureCD(page);
+    if (width === 1366) {
+      await checkRuptureCD(page);
+      await checkERPBoxSize(page);
+    }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
   } finally {
