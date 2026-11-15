@@ -235,6 +235,54 @@ table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th{p
  .logistics-panel .tablewrap{max-height:48vh}
  .logistics-panel .pager{justify-content:center}
 }
+
+/* V21: layout linear, sem posicionamento implícito do CSS Grid.
+   Evita cartões estreitos e grandes áreas vazias em telas desktop. */
+@media screen and (min-width:1100px){
+ main.desktop-layout{
+   display:flex !important;
+   flex-direction:column !important;
+   align-items:stretch !important;
+   width:100%;
+   max-width:1800px;
+   margin:0 auto;
+   gap:16px;
+ }
+ main.desktop-layout > :not(#logisticsPrint):not(.hidden){
+   flex:0 0 auto;
+   width:100%;
+   min-width:0;
+   max-width:100%;
+   box-sizing:border-box;
+ }
+ main.desktop-layout .filters-panel{
+   position:static;
+   max-height:none;
+ }
+ main.desktop-layout .filters{
+   display:flex;
+   flex-wrap:wrap;
+   gap:8px;
+ }
+ main.desktop-layout .filters button{
+   flex:0 1 auto;
+   min-width:100px;
+   padding:10px 14px;
+ }
+ main.desktop-layout .filters button:first-child{flex:0 1 auto}
+ main.desktop-layout .abc-filter-actions{
+   display:grid;
+   grid-template-columns:repeat(4,minmax(0,1fr));
+   gap:10px;
+ }
+ main.desktop-layout .logistics-panel .tablewrap,
+ main.desktop-layout .products-panel .tablewrap{
+   width:100%;
+   overflow-x:auto;
+ }
+ main.desktop-layout .logistics-panel .pager{justify-content:flex-end}
+ main.desktop-layout #logisticsPrint{display:none}
+}
 </style>
 </head>
 <body>
