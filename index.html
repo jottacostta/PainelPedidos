@@ -334,7 +334,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
     </div>
     <div class="product-tools">
       <div class="search-row"><input id="search" class="search" type="search" placeholder="Código, descrição, fornecedor ou pasta" aria-label="Pesquisar produtos"><span class="meta" id="count">0 registros</span></div>
-      <p class="small">Curva ABC por caixas vendidas no relatório importado. A até 80% do volume acumulado, B até 95% e C o restante.</p>
+      <p class="small">Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.</p>
       <div class="abc-filter-actions" role="group" aria-label="Filtrar por curva ABC">
 <button type="button" data-abc-filter="" aria-pressed="true">Todas <strong id="abcCountAll">0</strong></button>
 <button type="button" data-abc-filter="A" aria-pressed="false">Curva A <strong id="abcCountA">0</strong></button>
@@ -561,8 +561,8 @@ function sugestaoAtual(p){const final=pedidoFinalAtual(p),critical=(p.alertasCad
 function valorPedidoAtual(p){return sugestaoAtual(p)*Math.max(0,num(p.valorCaixa))}
 let selectedAbc="";
 function confirmedCurve(p){return (p.alertasCadastro||[]).includes("SEM CLASSIFICAÇÃO ABC")?"":String(p.abc||"").trim().toUpperCase()}
-function updateAbcControls(){const base=state.products;for(const key of ["A","B","C"])$("abcCount"+key).textContent=fmt.format(base.filter(p=>confirmedCurve(p)===key).length);$("abcCountAll").textContent=fmt.format(base.length);document.querySelectorAll("[data-abc-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.abcFilter===selectedAbc)))}
-function operationalProducts(){
+function updateAbcControls(base){for(const key of ["A","B","C"])$("abcCount"+key).textContent=fmt.format(base.filter(p=>confirmedCurve(p)===key).length);$("abcCountAll").textContent=fmt.format(base.length);document.querySelectorAll("[data-abc-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.abcFilter===selectedAbc)))}
+function produtosDoGrupo(){
  let arr=state.products;
  if(state.filter==="CDS")arr=arr.filter(p=>num(p.estoqueCDCaixa)>=1&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
  else if(state.filter==="DIRETO")arr=arr.filter(p=>num(p.pendenteCaixa)===0&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
@@ -573,6 +573,27 @@ function operationalProducts(){
   arr=arr.filter(p=>allowed.includes(norm(p.pasta)));
   if(state.filter!=="PRODUTOS INFLAMAVEIS")arr=arr.filter(p=>num(p.estoqueCDCaixa)>0);
  }
+ if(state.supplier)arr=arr.filter(p=>norm(p.fornecedor)===state.supplier);
+ return arr;
+}
+let curvaGrupoCache;
+function produtosComCurvaDoGrupo(){
+ if(!state.filter&&!state.supplier){
+  curvaGrupoCache=undefined;
+  return state.products;
+ }
+ const chave=[state.products,state.filter,state.supplier,state.matrix,state.config];
+ if(curvaGrupoCache?.chave.every((valor,i)=>valor===chave[i]))return curvaGrupoCache.produtos;
+ const produtos=produtosDoGrupo().map(p=>({
+  ...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM CLASSIFICAÇÃO ABC"),
+ }));
+ classificarABC(produtos);
+ produtos.forEach(calc);
+ curvaGrupoCache={chave,produtos};
+ return produtos;
+}
+function operationalProducts(){
+ let arr=produtosComCurvaDoGrupo();
  if(state.search){const q=norm(state.search);arr=arr.filter(p=>[p.codigo,p.descricao,p.fornecedor,p.pasta].some(v=>norm(v).includes(q)))}
  if(state.onlyNegative)arr=arr.filter(p=>pedidoFinalAtual(p)!=null&&pedidoFinalAtual(p)<0);
  else if(state.onlyZero)arr=arr.filter(p=>pedidoFinalAtual(p)!=null&&pedidoFinalAtual(p)===0);
@@ -580,25 +601,26 @@ function operationalProducts(){
   if(state.hideNegative)arr=arr.filter(p=>pedidoFinalAtual(p)==null||pedidoFinalAtual(p)>=0);
   if(state.hideZero)arr=arr.filter(p=>pedidoFinalAtual(p)==null||pedidoFinalAtual(p)!==0);
  }
- if(state.supplier)arr=arr.filter(p=>norm(p.fornecedor)===state.supplier);
- if(selectedAbc)arr=arr.filter(p=>confirmedCurve(p)===selectedAbc);
- return arr
+ return arr;
+}
+function filtrarCurva(produtos){
+ return selectedAbc?produtos.filter(p=>confirmedCurve(p)===selectedAbc):produtos;
 }
 function visible(){
- let arr=operationalProducts();
+ let arr=filtrarCurva(operationalProducts());
  if(state.onlyRupture)arr=arr.filter(emRuptura);
  return arr
 }
 let logisticsPage=0;
-function renderLogistics(){const arr=operationalProducts().filter(p=>num(p.pendenteCaixa)>0||num(p.transitoCaixa)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.pendenteCaixa)}</td><td class="right">${fmt.format(p.transitoCaixa)}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>num(p.pendenteCaixa)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,num(p.pendenteCaixa)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>num(p.transitoCaixa)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,num(p.transitoCaixa)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
-function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const operational=operationalProducts(),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${semEstoqueCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="12">Nenhum produto encontrado.</td></tr>';
+function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>num(p.pendenteCaixa)>0||num(p.transitoCaixa)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.pendenteCaixa)}</td><td class="right">${fmt.format(p.transitoCaixa)}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>num(p.pendenteCaixa)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,num(p.pendenteCaixa)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>num(p.transitoCaixa)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,num(p.transitoCaixa)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
+function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${semEstoqueCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="12">Nenhum produto encontrado.</td></tr>';
  $("count").textContent=`${fmt.format(all.length)} registros`;const pages=Math.max(1,Math.ceil(all.length/state.pageSize));$("pageLabel").textContent=`Página ${state.page+1} de ${pages}`;$("prev").disabled=state.page===0;$("next").disabled=state.page>=pages-1;
- const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));renderDiag();renderLogistics();updateAbcControls()}
+ const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
 function renderDiag(){const d=state.diagnostics;if(!d)return;const pct=(a)=>`${(a/d.total*100).toFixed(1).replace(".",",")}%`;const items=[["ERP analisado",fmt.format(d.total)],["MIX encontrado",`${fmt.format(d.mm)} (${pct(d.mm)})`],["MIX ausente",fmt.format(d.missM)],["PART GON",`${fmt.format(d.mp)} (${pct(d.mp)})`],["PART GON ausente",fmt.format(d.missP)]];$("diagnostics").innerHTML=items.map(([a,b])=>`<div class="diag">${a}<b>${b}</b></div>`).join("")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
 function download(blob,name){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
-document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;render()}));
+document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;limparSugestoes();render()}));
 $("logisticsPrev").addEventListener("click",()=>{if(logisticsPage>0){logisticsPage--;renderLogistics()}});
 $("logisticsNext").addEventListener("click",()=>{logisticsPage++;renderLogistics()});
 const DB="JBS_REPOSICAO_OFFLINE_V1";
@@ -608,15 +630,18 @@ async function restore(){return Promise.resolve()}
 function limparRevisaoPedido(){
  state.manualOrders={};
  closeManualEdit();
+ limparSugestoes();
+}
+function limparSugestoes(){
  $("suggestions").classList.add("hidden");
  $("suggestionRows").innerHTML="";
 }
 $("erpFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;notice("Lendo relatório ERP...");const erp=await parseERP(f);limparRevisaoPedido();state.products=cruzar(erp).map(calc);state.page=0;render();notice(`ERP importado: ${fmt.format(state.products.length)} produtos processados. Confira a cobertura cadastral antes de usar as sugestões.`,"ok");try{await save()}catch(err){console.warn(err)}}catch(err){notice("Falha na importação: "+err.message,"error")}finally{e.target.value=""}};
 $("baseFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data.mix)||!Array.isArray(data.part))throw Error("JSON deve conter os arrays mix e part.");state.mix=data.mix;state.part=data.part;notice(`Bases atualizadas: MIX ${fmt.format(state.mix.length)}, PART GON ${fmt.format(state.part.length)}. Reimporte o ERP para recalcular.`,"ok")}catch(err){notice("Falha ao atualizar bases: "+err.message,"error")}finally{e.target.value=""}};
-$("matrixFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error("A matriz deve ser um array JSON de códigos.");state.matrix=new Set(data.map(code));notice(`Matriz carregada: ${fmt.format(state.matrix.size)} códigos.`,"ok");render()}catch(err){notice(err.message,"error")}finally{e.target.value=""}};
-$("filters").onclick=e=>{const b=e.target.closest("button[data-filter]");if(!b)return;state.filter=b.dataset.filter;state.page=0;document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("active",x===b));render()};
+$("matrixFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error("A matriz deve ser um array JSON de códigos.");state.matrix=new Set(data.map(code));if(state.filter==="MATRIZ"){limparSugestoes();state.page=0;logisticsPage=0}notice(`Matriz carregada: ${fmt.format(state.matrix.size)} códigos.`,"ok");render()}catch(err){notice(err.message,"error")}finally{e.target.value=""}};
+$("filters").onclick=e=>{const b=e.target.closest("button[data-filter]");if(!b)return;state.filter=b.dataset.filter;state.page=0;logisticsPage=0;limparSugestoes();document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("active",x===b));render()};
 $("search").oninput=e=>{state.search=e.target.value;state.page=0;render()};
-$("supplierFilter").onchange=e=>{state.supplier=e.target.value;state.page=0;render()};
+$("supplierFilter").onchange=e=>{state.supplier=e.target.value;state.page=0;logisticsPage=0;limparSugestoes();render()};
 $("hideNegative").onchange=e=>{state.hideNegative=e.target.checked;state.page=0;render()};
 $("hideZero").onchange=e=>{state.hideZero=e.target.checked;state.page=0;render()};
 $("onlyNegative").onchange=e=>{state.onlyNegative=e.target.checked;if(state.onlyNegative){state.onlyZero=false;$("onlyZero").checked=false}state.page=0;render()};
@@ -626,8 +651,8 @@ function toggleRuptureFilter(){state.onlyRupture=!state.onlyRupture;state.page=0
 $("ruptureKpi").onclick=toggleRuptureFilter;
 $("ruptureKpi").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleRuptureFilter()}};
 $("prev").onclick=()=>{state.page=Math.max(0,state.page-1);render()};$("next").onclick=()=>{state.page++;render()};
-$("applyParams").onclick=async()=>{state.config={diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
-$("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=state.products.find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
+$("applyParams").onclick=async()=>{state.config={diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);limparSugestoes();render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
+$("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
 function closeManualEdit(){$("manualEditModal").classList.remove("open");state.editingCode=null}
 $("cancelManualEdit").onclick=closeManualEdit;
 $("manualEditModal").addEventListener("click",e=>{if(e.target.id==="manualEditModal")closeManualEdit()});
@@ -636,7 +661,7 @@ $("saveManualEdit").onclick=()=>{const raw=$("manualEditValue").value,value=Numb
 $("exportBtn").onclick=csv;
 $("printLogistics").onclick=()=>{
  if(!state.products.length){notice("Importe o relatório ERP antes de imprimir o acompanhamento.","error");return}
- const items=operationalProducts().filter(p=>num(p.pendenteCaixa)>0||num(p.transitoCaixa)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
+ const items=filtrarCurva(operationalProducts()).filter(p=>num(p.pendenteCaixa)>0||num(p.transitoCaixa)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
  if(!items.length){notice("Nenhum pedido pendente ou em trânsito para imprimir com os filtros atuais.","error");return}
  $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td>${fmt.format(p.pendenteCaixa)}</td><td>${fmt.format(p.transitoCaixa)}</td></tr>`).join("");
  $("logisticsPrintInfo").textContent=`Data: ${new Date().toLocaleString("pt-BR")} | Registros: ${fmt.format(items.length)} | Fornecedor: ${state.supplier||"TODOS"} | Pasta: ${state.folder||"TODAS"}`;
