@@ -11,6 +11,15 @@ async function checkRuptureCD(page) {
   const backup = { products: [
     { ...base, codigo: '01', descricao: 'CD ESGOTADO', estoqueCDCaixa: 0 },
     { ...base, codigo: '02', descricao: 'CD COM ESTOQUE', estoqueCDCaixa: 20 },
+    {
+      ...base, codigo: '03', descricao: 'PEDIDO NEGATIVO COM TRANSITO', estoqueCDCaixa: 20,
+      vendaUnidade: 0, estoqueLojaUnidade: 1, quantidadeCaixa: 24, transitoCaixa: 8,
+      alertasCadastro: ['ALERTA CADASTRAL EXISTENTE'],
+    },
+    {
+      ...base, codigo: '04', descricao: 'PEDIDO NEGATIVO COM ESTOQUE', estoqueCDCaixa: 20,
+      vendaUnidade: 0, estoqueLojaUnidade: 48, quantidadeCaixa: 24,
+    },
   ] };
   await page.locator('#backupFile').setInputFiles({
     name: 'backup-test.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)),
@@ -34,6 +43,17 @@ async function checkRuptureCD(page) {
   assert.equal(await page.locator('#rows tr.rupture-row').count(), 2);
   await page.locator('#onlyRupture').uncheck();
 
+  await page.locator('#hideNegative').uncheck();
+  const transit = page.locator('#rows tr').filter({ hasText: 'PEDIDO NEGATIVO COM TRANSITO' });
+  const stock = page.locator('#rows tr').filter({ hasText: 'PEDIDO NEGATIVO COM ESTOQUE' });
+  assert.equal(await transit.locator('td.order-column').innerText(), '-8');
+  const transitAlert = await transit.locator('.product-alerts').innerText();
+  assert.match(transitAlert, /estoque loja 0,04, pendentes 0, trânsito 8/);
+  assert.match(transitAlert, /necessidade com área de venda 1/);
+  assert.match(transitAlert, /Sugestão 0/);
+  assert.match(transitAlert, /ALERTA CADASTRAL EXISTENTE/);
+  assert.match(await stock.locator('.product-alerts').innerText(), /estoque loja 2, pendentes 0, trânsito 0/);
+
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportBtn').click();
   const download = await downloadPromise;
@@ -43,11 +63,17 @@ async function checkRuptureCD(page) {
   const blockedRow = csv.split('\r\n').find(line => line.startsWith('"01";'));
   assert(blockedRow);
   assert.deepEqual(blockedRow.split(';').slice(9, 13), ['"0"', '"0"', '"0"', '"0"']);
+  assert.match(csv, /PEDIDO NEGATIVO \(cx\): estoque loja 0,04, pendentes 0, trânsito 8/);
 
   await page.locator('#suggestBtn').click();
   const suggestions = await page.locator('#suggestionRows').innerText();
   assert.match(suggestions, /CD COM ESTOQUE/);
-  assert.doesNotMatch(suggestions, /CD ESGOTADO/);
+  assert.doesNotMatch(suggestions, /CD ESGOTADO|PEDIDO NEGATIVO/);
+  await transit.locator('[data-edit-code]').click();
+  await page.locator('#manualEditValue').fill('0');
+  await page.locator('#saveManualEdit').click();
+  assert.equal(await transit.locator('.product-alerts').innerText(), 'ALERTA CADASTRAL EXISTENTE');
+  await page.locator('#hideNegative').check();
 }
 
 async function checkERPBoxSize(page) {
