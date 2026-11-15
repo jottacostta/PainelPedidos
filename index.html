@@ -484,10 +484,39 @@ function classificarABC(products){
   p.abc=num(p.quantidadeCaixa)<=0&&num(p.vendaUnidade)>0?"":classePorHost.get(p.codigo)||"C";
  }
 }
+function prefixoDaDescricao(descricao){
+ const [tipo,marca]=norm(descricao).match(/[A-Z0-9]+/g)||[];
+ return tipo&&marca&&/[A-Z]/.test(tipo)&&/[A-Z]/.test(marca)?tipo+" "+marca:"";
+}
+function indexarPastasPorDescricao(cadastros){
+ const referencias=new Map();
+ for(const cadastro of cadastros){
+  const prefixo=prefixoDaDescricao(cadastro.descricao);
+  const pasta=String(cadastro.pasta??"").trim();
+  if(!prefixo||!pasta)continue;
+  const referencia=referencias.get(prefixo);
+  if(!referencia){
+   referencias.set(prefixo,{pasta,total:1,divergente:false});
+   continue;
+  }
+  referencia.total++;
+  if(norm(referencia.pasta)!==norm(pasta))referencia.divergente=true;
+ }
+ return referencias;
+}
 function cruzar(erp){
- const mi=index(state.mix),pi=index(state.part);let mm=0,mp=0,missM=0,missP=0;
+ const mi=index(state.mix),pi=index(state.part);
+ const pastasPorDescricao=indexarPastasPorDescricao(mi.values());
+ let mm=0,mp=0,missM=0,missP=0;
  const products=erp.map(src=>{const p={...src,alertasCadastro:[...src.alertasCadastro]};const m=mi.get(p.codigo),g=pi.get(p.codigo);
  if(m){mm++;p.pasta=String(m.pasta??"");p.pallet=num(m.pallet);p.fornecedor=String(m.fornecedor??"");p.comprador=String(m.comprador??"");p.valorCaixa=num(m.valorCaixa);p.valorUnitario=num(m.valorUnitario)}else{missM++;p.alertasCadastro.push("SEM CADASTRO MIX")}
+ if(!p.pasta.trim()){
+  const referencia=pastasPorDescricao.get(prefixoDaDescricao(p.descricao));
+  if(referencia&&referencia.total>=3&&!referencia.divergente){
+   p.pasta=referencia.pasta;
+   p.alertasCadastro.push("PASTA CLASSIFICADA POR SEMELHANÇA");
+  }
+ }
  if(g){mp++;p.areaVenda=num(g.areaVenda);p.filialBase=String(g.filial??"")}else{missP++;p.areaVenda=1;p.alertasCadastro.push("SEM PART GON")}
  if(m&&!(p.valorCaixa>0))p.alertasCadastro.push("VALOR CAIXA ZERO OU NÃO INFORMADO");
  if(m&&!(p.pallet>0))p.alertasCadastro.push("QUANTIDADE POR PALLET ZERO OU NÃO INFORMADA");
