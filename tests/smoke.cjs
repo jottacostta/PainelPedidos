@@ -18,7 +18,7 @@ async function checkRuptureCD(page) {
     },
     {
       ...base, codigo: '04', descricao: 'PEDIDO NEGATIVO COM ESTOQUE', estoqueCDCaixa: 20,
-      vendaUnidade: 0, estoqueLojaUnidade: 48, quantidadeCaixa: 24,
+      vendaUnidade: 24, estoqueLojaUnidade: 48, quantidadeCaixa: 24,
     },
   ] };
   await page.locator('#backupFile').setInputFiles({
@@ -51,8 +51,11 @@ async function checkRuptureCD(page) {
   assert.match(transitAlert, /estoque loja 0,04, pendentes 0, trânsito 8/);
   assert.match(transitAlert, /necessidade com área de venda 1/);
   assert.match(transitAlert, /Sugestão 0/);
+  assert.match(transitAlert, /Sem estimativa de dias para o excedente/);
   assert.match(transitAlert, /ALERTA CADASTRAL EXISTENTE/);
-  assert.match(await stock.locator('.product-alerts').innerText(), /estoque loja 2, pendentes 0, trânsito 0/);
+  const stockAlert = await stock.locator('.product-alerts').innerText();
+  assert.match(stockAlert, /estoque loja 2, pendentes 0, trânsito 0/);
+  assert.match(stockAlert, /Excedente de 1 cx equivale a 30 dias de venda/);
 
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportBtn').click();
@@ -60,6 +63,7 @@ async function checkRuptureCD(page) {
   const chunks = [];
   for await (const chunk of await download.createReadStream()) chunks.push(chunk);
   const csv = Buffer.concat(chunks).toString('utf8');
+  assert.match(csv, /Excedente de 1 cx equivale a 30 dias de venda/);
   const blockedRow = csv.split('\r\n').find(line => line.startsWith('"01";'));
   assert(blockedRow);
   assert.deepEqual(blockedRow.split(';').slice(9, 13), ['"0"', '"0"', '"0"', '"0"']);
