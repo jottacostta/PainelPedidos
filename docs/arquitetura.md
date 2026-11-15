@@ -2,19 +2,14 @@
 
 ## Aplicação
 
-A V19 é distribuída como uma aplicação HTML autocontida, executada localmente pelo navegador. `index.html` é a cópia do artefato original `JBS_REPOSICAO_OFFLINE_CPD_IMPRESSAO_V19.html`; os scripts e estilos existentes permanecem no próprio arquivo. Não foi introduzida cadeia de build nem dependência externa.
+O `index.html` reúne a interface, os estilos, o JavaScript e as bases iniciais MIX e PART GON em um único arquivo. Na abertura, o navegador descomprime as bases internas. A importação, os cálculos e a preparação dos arquivos para exportação e impressão acontecem no próprio dispositivo.
 
-## Fluxo de uso
+O ERP ESTATÍSTICA é lido como texto tabulado, decodificado em Windows-1252. O cabeçalho identifica o formato. O painel cruza os itens do ERP com MIX e PART GON pelo código HOST. A matriz opcional é um JSON com uma lista de códigos e alimenta o filtro de matriz. Para substituir as bases da sessão, importe um JSON com os arrays `mix` e `part` e reimporte o ERP.
 
-1. O operador abre a página localmente.
-2. Importa os relatórios ERP pelos controles implementados na aplicação.
-3. Consulta sugestões de reposição, filtros de produto/fornecedor e curvas ABC.
-4. Acompanha pedidos pendentes e em trânsito em tabela separada, ajusta quantidades e imprime os documentos necessários.
+## Sessão e backup
 
-## Repositório e CI
+Ao abrir o painel, os produtos processados começam vazios. O backup JSON guarda produtos processados, parâmetros de cobertura e códigos da matriz. Ao restaurar o arquivo, o painel recalcula os pedidos com os parâmetros restaurados. Para reconstruir a curva ABC geral a partir das vendas, reimporte o ERP original. Edições manuais de pedido e seleções de filtro são mantidas em memória durante a sessão.
 
-`main` é a branch padrão. Alterações devem passar por Pull Request. O workflow `validate.yml` verifica presença e estrutura HTML básica e valida sintaxe de scripts inline com Node.js. O workflow não executa deploy. Dados ERP e demais dados comerciais não devem ser versionados.
+## Validação
 
-## Limites documentais
-
-Esta descrição reflete o artefato recebido; detalhes internos de persistência, formatos ERP e regras algorítmicas devem ser confirmados no código e com responsáveis funcionais antes de mudanças.
+O workflow [Validate](../.github/workflows/validate.yml) roda em pull requests para `main` e em pushes nessa branch. Ele verifica HTML e sintaxe JavaScript e executa a suíte [smoke.cjs](../tests/smoke.cjs) em Chromium. A suíte usa relatórios e backups sintéticos e verifica a interface em larguras de 320, 390, 768, 1366 e 1920 px.

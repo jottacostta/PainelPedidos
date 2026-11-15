@@ -1,14 +1,19 @@
-# Regras de negócio (escopo conhecido da V19)
+# Regras de negócio
 
-- A aplicação permite importar relatórios provenientes do ERP para apoiar a reposição.
-- São calculadas sugestões de reposição a partir dos dados processados pela aplicação. Parâmetros e fórmulas exatas permanecem definidos pelo código V19 e devem ser preservados.
-- Produtos e fornecedores podem ser filtrados.
-- As classes/curvas A, B e C são apresentadas como controles clicáveis para consulta segmentada.
-- Pedidos pendentes e pedidos em trânsito são acompanhados em tabela independente.
-- Quantidades podem ser editadas manualmente.
-- Pedidos e relatórios de acompanhamento podem ser impressos.
-- A solução deve continuar utilizável offline.
+## Importação e cadastro
 
-## Cuidados
+- A quantidade de unidades por caixa vem da embalagem que aparece nos campos de pedido pendente ou trânsito do ERP ESTATÍSTICA, no formato `caixas x unidades por caixa + unidades avulsas`. Se as duas embalagens informadas divergirem ou se nenhuma for válida, o painel sinaliza o cadastro.
+- Se o item estiver sem pasta, o painel procura o mesmo prefixo de duas palavras da descrição no MIX. A classificação por semelhança exige pelo menos três cadastros de referência e concordância entre suas pastas.
 
-Não inferir nem alterar limiares ABC, fórmulas de sugestão, critérios de estoque ou layouts de importação sem validação com o responsável do processo. Não registrar em commits relatórios ERP, pedidos reais ou informações comerciais.
+## Curva ABC e cobertura
+
+- A curva usa o volume vendido em caixas, calculado dividindo as unidades vendidas pela quantidade por caixa. Os HOSTs são ordenados do maior para o menor volume. A curva A preenche o acumulado até o corte de 80%, e a B até 95%. O item que alcança ou ultrapassa um corte fica na classe que estava sendo preenchida. A curva C reúne o restante.
+- Ao aplicar filtro operacional ou de fornecedor, a classificação e as quantidades são recalculadas dentro desse grupo. Os botões A, B e C exibem os respectivos subconjuntos. A busca textual restringe os resultados exibidos.
+- A cobertura padrão é de 7 dias para A, 10 para B e 14 para C, considerando um período de vendas de 30 dias. Os quatro parâmetros podem ser ajustados no painel.
+
+## Reposição e acompanhamento
+
+- Estoque do CD zerado gera a situação **RUPTURA CD**, com pedido final e sugestão zerados. A edição fica indisponível nessa situação.
+- O pedido considera necessidade de cobertura e área de venda, estoque da loja, pendências e trânsito. Quando o cálculo é negativo, a coluna **Alertas** detalha esses componentes e estima quantos dias de venda o excedente representa, desde que exista média de venda positiva. A sugestão de reposição é zero nesse caso.
+- O operador pode ajustar manualmente o pedido com uma quantidade inteira de caixas igual ou maior que zero. Gere as sugestões depois do ajuste para atualizar o pedido impresso.
+- O acompanhamento reúne itens com pendência ou trânsito acima de zero, mostra totais em caixas e tem impressão própria. O CSV exporta a revisão de produtos conforme os filtros ativos.

@@ -2,6 +2,90 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
+async function checkInvalidERP(page) {
+  const rows = page.locator('#rows tr');
+  const previousRows = await rows.allTextContents();
+  await page.locator('#erpFile').setInputFiles({
+    name: 'cabecalho-invalido.xls',
+    mimeType: 'text/tab-separated-values',
+    buffer: Buffer.from('CABECALHO INCORRETO\tCHAVE\nTOTAL\n\n1\t900'),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').classList.contains('error'));
+  assert.match(await page.locator('#notice').innerText(), /Cabeçalho ERP ESTATÍSTICA não reconhecido/);
+  assert.deepEqual(await rows.allTextContents(), previousRows);
+  assert.equal(await page.locator('#erpFile').inputValue(), '');
+}
+
+async function checkBackupAndLogistics(page) {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
+  const base = {
+    vendaUnidade: 30, estoqueLojaUnidade: 0, estoqueCDCaixa: 20,
+    quantidadeCaixa: 1, pendenteCaixa: 0, transitoCaixa: 0, abc: 'A',
+    areaVenda: 1, valorCaixa: 10, alertasCadastro: [],
+  };
+  const backup = {
+    products: [
+      { ...base, codigo: '601', descricao: 'ZETA', fornecedor: 'ALFA', pendenteCaixa: 2 },
+      { ...base, codigo: '602', descricao: 'BETA', fornecedor: 'ALFA', transitoCaixa: 3 },
+      { ...base, codigo: '603', descricao: 'GAMA', fornecedor: 'OUTRO', pendenteCaixa: 4, transitoCaixa: 1 },
+      { ...base, codigo: '604', descricao: 'DELTA', fornecedor: 'ALFA' },
+    ],
+    config: { diasA: 8, diasB: 10, diasC: 14, periodoVenda: 30 },
+    matrix: ['601'],
+  };
+  const backupInput = page.locator('#backupFile');
+  await backupInput.setInputFiles({
+    name: 'logistica-teste.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
+
+  const order = page.locator('#rows tr').filter({ hasText: 'ZETA' });
+  assert.equal(await order.locator('.order-column').innerText(), '7');
+  await order.locator('[data-edit-code]').click();
+  await page.locator('#manualEditValue').fill('9');
+  await page.locator('#saveManualEdit').click();
+  assert.match(await order.locator('.order-column').innerText(), /^9/);
+
+  await page.locator('#supplierFilter').selectOption('ALFA');
+  assert.equal(await page.locator('#logisticsRows tr').count(), 2);
+  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 1 itens / 2 caixas');
+  assert.equal(await page.locator('#transitSummary').innerText(), 'Em trânsito: 1 itens / 3 caixas');
+  await page.evaluate(() => { window.print = () => { window.printRequested = true; }; });
+  await page.locator('#printLogistics').click();
+  assert.equal(await page.evaluate(() => window.printRequested), true);
+  await page.emulateMedia({ media: 'print' });
+  assert(await page.locator('#logisticsPrint').isVisible());
+  const printRows = page.locator('#logisticsPrintRows tr');
+  assert.deepEqual(await printRows.locator('td:first-child').allTextContents(), ['602', '601']);
+  assert.equal(await page.locator('#logisticsPrintTotals').innerText(),
+    'Pendentes: 1 itens / 2 caixas | Em trânsito: 1 itens / 3 caixas');
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  assert(!(await page.locator('#logisticsPrint').isVisible()));
+  await page.emulateMedia({ media: 'screen' });
+
+  await page.getByText('Bases, matriz e backup', { exact: true }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#saveBtn').click();
+  const download = await downloadPromise;
+  assert.equal(download.suggestedFilename(), 'JBS_BACKUP_LOCAL.json');
+  const chunks = [];
+  for await (const chunk of await download.createReadStream()) chunks.push(chunk);
+  const saved = Buffer.concat(chunks);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
+  assert.equal(await page.locator('#kProducts').innerText(), '0');
+  await backupInput.setInputFiles({
+    name: download.suggestedFilename(), mimeType: 'application/json', buffer: saved,
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
+  assert.equal(await page.locator('#daysA').inputValue(), '8');
+  assert.equal(await order.locator('.order-column').innerText(), '7');
+  await page.locator('[data-filter="MATRIZ"]').click();
+  assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['601']);
+}
+
 async function checkRuptureCD(page) {
   const base = {
     vendaUnidade: 30, estoqueLojaUnidade: 0, quantidadeCaixa: 1,
@@ -329,11 +413,13 @@ async function checkViewport(browser, width) {
     assert(!(await page.locator('#products').isVisible()));
     await page.emulateMedia({ media: 'screen' });
     if (width === 1366) {
+      await checkInvalidERP(page);
       await checkRuptureCD(page);
       await checkERPBoxSize(page);
       await checkDynamicABC(page);
       await checkInferredFolders(page);
       await checkScopedABC(page);
+      await checkBackupAndLogistics(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
