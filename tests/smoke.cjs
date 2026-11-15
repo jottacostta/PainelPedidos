@@ -40,8 +40,16 @@ async function checkViewport(browser, width) {
     );
     assert.match(await page.locator('#notice').innerText(), /^ERP importado: 3/);
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
-    assert.deepEqual(await page.locator('#products th').allTextContents().then(cells => cells.slice(0, 3)),
-      ['HOST', 'DESCRIÇÃO', 'PEDIDO (CX)']);
+    assert.deepEqual(await page.locator('#products th').allTextContents(), [
+      'HOST', 'DESCRIÇÃO', 'VENDA', 'ESTOQUE UN', 'CD CX', 'SITUAÇÃO',
+      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'ALERTAS',
+    ]);
+    const firstProduct = page.locator('#rows tr').first();
+    const cells = await firstProduct.locator('td').allTextContents();
+    assert.equal(cells.length, 12);
+    assert.equal(cells[0], '384667');
+    assert.deepEqual(cells.slice(2, 5), ['10', '0', '0']);
+    assert.equal(await firstProduct.locator('td:nth-child(10).order-column').count(), 1);
 
     for (const curve of ['A', '']) {
       const filter = page.locator('[data-abc-filter="' + curve + '"]');
