@@ -83,6 +83,53 @@ async function checkERPBoxSize(page) {
   assert.match(rows[3][11], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
 }
 
+async function checkDynamicABC(page) {
+  const products = [
+    { id: '201', sales: 60, packageSize: 12, curve: 'C', order: '4' },
+    { id: '202', sales: 1500, packageSize: 100, curve: 'B', order: '6' },
+    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '20' },
+    { id: '204', sales: 0, packageSize: 12, curve: 'C', order: '2' },
+    { id: '205', sales: 5000, packageSize: 0, curve: '', order: '—' },
+  ];
+  const base = {
+    mix: products.map(({ id }) => ({ codigo: id, valorCaixa: 10, pallet: 10 })),
+    abc: products.map(({ id }) => ({ codigo: id, abc: 'A' })),
+    part: products.map(({ id }) => ({ codigo: id, areaVenda: 1 })),
+  };
+  await page.locator('#baseFile').setInputFiles({
+    name: 'bases-abc.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(base)),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
+
+  async function importReport() {
+    const header = 'Ordem\tChave\tDescricao\tQtde Venda\tEstoque (Un)\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)';
+    const rows = products.map(({ id, sales, packageSize }, i) => {
+      const movement = packageSize > 0 ? '00 x ' + packageSize + ',0 + 000' : '-*-';
+      return [i + 1, id, 'PRODUTO ' + id, sales, 0, movement, movement, '100 x 001,0 + 000'].join('\t');
+    });
+    const report = [header, '\tTotal', '', ...rows].join('\r\n');
+    await page.locator('#erpFile').setInputFiles({
+      name: 'pareto.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report),
+    });
+    await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 5'));
+  }
+
+  await importReport();
+  const rows = await page.locator('#rows tr').evaluateAll(items =>
+    items.map(row => [row.cells[0].textContent, row.cells[8].textContent, row.cells[9].textContent]));
+  assert.deepEqual(rows, products.map(({ id, curve, order }) => [id, curve, order]));
+  assert.equal(await page.locator('#abcCountA').innerText(), '1');
+  assert.equal(await page.locator('#abcCountB').innerText(), '1');
+  assert.equal(await page.locator('#abcCountC').innerText(), '2');
+  await page.locator('[data-abc-filter="A"]').click();
+  assert.equal(await page.locator('#rows td').first().innerText(), '203');
+
+  products[0].sales = 960;
+  products[2].sales = 60;
+  await importReport();
+  assert.equal(await page.locator('#rows td').first().innerText(), '201');
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -159,6 +206,7 @@ async function checkViewport(browser, width) {
     if (width === 1366) {
       await checkRuptureCD(page);
       await checkERPBoxSize(page);
+      await checkDynamicABC(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
