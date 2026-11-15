@@ -1,25 +1,35 @@
-# JBS Reposição — V19
+# PainelPedidos — JBS Reposição V23
 
-Sistema web offline para gestão de reposição de mercadorias e acompanhamento operacional do CPD. A aplicação-base é o arquivo original `JBS_REPOSICAO_OFFLINE_CPD_IMPRESSAO_V19.html`, preservado em `index.html`.
+Painel web offline para revisar o estoque, calcular a reposição e preparar pedidos para o CPD. A V23 é a versão numerada do layout incorporada pela [PR #5](https://github.com/jottacostta/PainelPedidos/pull/5). As melhorias posteriores estão no [histórico de versões](docs/historico-versoes.md).
 
-## Funcionalidades
+## Como usar
 
-- Importação de relatórios ERP e cálculo de sugestões de reposição.
-- Filtros de produtos e fornecedores e visualização clicável das curvas ABC.
-- Tabelas independentes de pedidos pendentes e em trânsito.
-- Edição manual de quantidades e impressão de pedidos/relatórios de acompanhamento.
-- Funcionamento offline, sem dependências de execução externas.
+1. Abra `index.html` em um navegador com suporte à descompressão gzip por `DecompressionStream`, como o Chromium.
+2. Importe o **ERP ESTATÍSTICA** com os campos **02, 49, 153, 154 e 164**. A importação aceita `.xls`, `.txt` e `.tsv` com conteúdo tabulado e reconhece o relatório pelo cabeçalho.
+3. Confira a cobertura cadastral, ajuste os filtros e revise a coluna **Alertas**. Se necessário, ajuste o **Pedido Final** antes de gerar as sugestões.
+4. Gere as sugestões para imprimir o pedido do CPD. Use **Acompanhamento de pedidos** para consultar e imprimir pendências e trânsito.
+5. Para continuar em outra sessão, baixe o backup JSON e restaure-o ao reabrir o painel. Ajustes manuais do pedido valem para a sessão atual.
 
-## Uso
+## Desenvolvimento e testes
 
-Abra `index.html` em um navegador compatível. Para importar arquivos ERP, use os controles da própria aplicação e siga as instruções exibidas na interface. Não inclua relatórios reais, credenciais ou dados comerciais no Git.
+A branch padrão é `main`. Abra uma pull request para propor alterações. O GitHub Actions valida a estrutura do HTML, a sintaxe do JavaScript e os fluxos do painel com Playwright e Chromium.
 
-## Desenvolvimento e validação
+Para executar os testes localmente, use Node.js 20, npm e Python 3 na raiz do repositório.
 
-A branch padrão é `main`. Mudanças devem ser propostas por Pull Request; preserve o comportamento V19 e valide a aplicação antes de solicitar revisão. O GitHub Actions executa verificações básicas de estrutura HTML e sintaxe JavaScript embutida em cada Pull Request e push.
+```sh
+npm install --no-save playwright@1.56.1
+npx playwright install chromium
+python3 -m http.server 8765 --bind 127.0.0.1
+```
 
-## Privacidade
+Rode a suíte em outro terminal enquanto o servidor estiver em execução.
 
-Este repositório é privado. Ainda assim, mantenha dados operacionais e comerciais fora do controle de versão. O workflow de validação não publica nem implanta a aplicação.
+```sh
+node tests/smoke.cjs
+```
 
-Consulte [`docs/arquitetura.md`](docs/arquitetura.md), [`docs/regras-de-negocio.md`](docs/regras-de-negocio.md) e [`docs/historico-versoes.md`](docs/historico-versoes.md).
+Use dados sintéticos nos testes. Mantenha relatórios operacionais, backups e pedidos reais fora do Git. O workflow é de validação e a aplicação pode ser aberta diretamente do arquivo HTML.
+
+- [Arquitetura](docs/arquitetura.md)
+- [Regras de negócio](docs/regras-de-negocio.md)
+- [Histórico de versões](docs/historico-versoes.md)
