@@ -209,6 +209,52 @@ async function checkInferredFolders(page) {
   assert.doesNotMatch(suggestions, /AMACIANTE COMFORT SEM MIX/);
 }
 
+async function checkScopedABC(page) {
+  await page.locator('[data-filter=""]').click();
+  await page.locator('[data-abc-filter=""]').click();
+  const base = {
+    estoqueLojaUnidade: 0, quantidadeCaixa: 1, estoqueCDCaixa: 200,
+    pendenteCaixa: 0, transitoCaixa: 0, areaVenda: 1, valorCaixa: 10, alertasCadastro: [],
+  };
+  const backup = { products: [
+    { ...base, codigo: '501', descricao: 'VENDAS LIMPEZA', pasta: 'LIMPEZA', fornecedor: 'MIX LIMPEZA', vendaUnidade: 1000, abc: 'A' },
+    { ...base, codigo: '502', descricao: 'PERFUMARIA A', pasta: 'PERFUMARIA', fornecedor: 'FORNECEDOR A', vendaUnidade: 80, abc: 'B' },
+    { ...base, codigo: '503', descricao: 'PERFUMARIA B', pasta: 'PERFUMARIA', fornecedor: 'FORNECEDOR B', vendaUnidade: 15, abc: 'C' },
+    { ...base, codigo: '504', descricao: 'PERFUMARIA C', pasta: 'PERFUMARIA', fornecedor: 'FORNECEDOR B', vendaUnidade: 5, abc: 'C' },
+  ] };
+  await page.locator('#backupFile').setInputFiles({
+    name: 'curva-grupo.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Backup restaurado'));
+
+  const hosts = () => page.locator('#rows tr td:first-child').allTextContents();
+  await page.locator('[data-abc-filter="A"]').click();
+  assert.deepEqual(await hosts(), ['501']);
+  await page.locator('[data-filter="PERFUMARIA"]').click();
+  assert.deepEqual(await hosts(), ['502']);
+  assert.equal(await page.locator('#abcCountAll').innerText(), '3');
+  assert.equal(await page.locator('#abcCountA').innerText(), '1');
+  assert.equal(await page.locator('#rows td.order-column').innerText(), '20');
+  await page.locator('#rows [data-edit-code="502"]').click();
+  assert.equal(await page.locator('#manualEditValue').inputValue(), '20');
+  await page.locator('#cancelManualEdit').click();
+
+  await page.locator('[data-abc-filter="B"]').click();
+  assert.deepEqual(await hosts(), ['503']);
+  await page.locator('[data-abc-filter="A"]').click();
+  await page.locator('#suggestBtn').click();
+  assert.match(await page.locator('#suggestionRows').innerText(), /PERFUMARIA A/);
+
+  await page.locator('#supplierFilter').selectOption('FORNECEDOR B');
+  assert.deepEqual(await hosts(), ['503', '504']);
+  assert.equal(await page.locator('#abcCountAll').innerText(), '2');
+  assert.equal(await page.locator('#abcCountA').innerText(), '2');
+  assert(!(await page.locator('#suggestions').isVisible()));
+  await page.locator('#supplierFilter').selectOption('');
+  await page.locator('[data-filter=""]').click();
+  assert.deepEqual(await hosts(), ['501']);
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -287,6 +333,7 @@ async function checkViewport(browser, width) {
       await checkERPBoxSize(page);
       await checkDynamicABC(page);
       await checkInferredFolders(page);
+      await checkScopedABC(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
