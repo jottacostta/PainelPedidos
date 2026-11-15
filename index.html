@@ -309,10 +309,10 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   <section class="hero" aria-labelledby="pageTitle">
     <div>
       <h1 id="pageTitle">Painel de pedidos</h1>
-      <p>Importe o relatório ERP 1011, revise as quantidades e gere as sugestões de reposição para o CPD.</p>
+      <p>Importe o relatório ERP ESTATÍSTICA, revise as quantidades e gere as sugestões de reposição para o CPD.</p>
     </div>
     <div class="hero-actions">
-      <span class="file-control"><input id="erpFile" type="file" accept=".xls,.txt,.tsv"><label class="file-label" for="erpFile"><span class="upload-icon" aria-hidden="true">↑</span>Importar ERP</label></span>
+      <span class="file-control"><input id="erpFile" type="file" accept=".xls,.txt,.tsv"><label class="file-label" for="erpFile"><span class="upload-icon" aria-hidden="true">↑</span>Importar ERP ESTATÍSTICA</label></span>
       <button id="suggestBtn" type="button" class="hero-secondary">Gerar sugestões</button>
     </div>
   </section>
@@ -401,10 +401,10 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
       </div>
     </details>
     <details class="panel support-panel">
-      <summary>Campos do relatório ERP</summary>
+      <summary>Campos do ERP ESTATÍSTICA</summary>
       <div class="support-content">
         <p class="small">Campos para gerar na estatística: <strong>02 · 49 · 153 · 154 · 164</strong>.</p>
-        <p class="small">Selecione o arquivo do ERP 1011 (.xls, .txt ou .tsv). O nome é livre. O relatório é identificado pelo cabeçalho.</p>
+        <p class="small">Selecione o arquivo do ERP ESTATÍSTICA (.xls, .txt ou .tsv). O nome é livre. O relatório é identificado pelo cabeçalho.</p>
       </div>
     </details>
   </div>
@@ -473,7 +473,7 @@ function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidad
  p.pedidoFinalArredondado=p.pedido==null?null:(p.pedido>0?Math.ceil(p.pedido):p.pedido<0?Math.floor(p.pedido):0);
  const critical=p.alertasCadastro.includes("SEM CADASTRO MIX")||p.alertasCadastro.includes("QUANTIDADE POR CAIXA INVÁLIDA");
  p.pedidoSugestao=critical||p.pedidoFinalArredondado==null?0:Math.max(0,p.pedidoFinalArredondado);p.valorPedido=p.pedidoSugestao*Math.max(0,num(p.valorCaixa));p.mediaVendaCxDia=avg;p.estoqueLojaCx=stock;return p}
-function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new TextDecoder("windows-1252").decode(buf),lines=text.replace(/^\uFEFF/,"").split(/\r?\n/);if(lines.length<4)throw Error("ERP incompleto: esperado cabeçalho, totais, linha vazia e produtos.");const h=lines[0].split("\t").map(norm),expected=["ORDEM","CHAVE","DESCRICAO","QTDE VENDA","ESTOQUE (UN)","QTDE PED.PEND (CX)","QTDE EST.TRANSITO (CX)","EST. DEPOSITO (CX)"];if(!expected.every((x,i)=>h[i]===x))throw Error("Cabeçalho ERP 1011 não reconhecido.");const out=[];for(let i=3;i<lines.length;i++){const l=lines[i];if(!l.trim())continue;const c=l.split("\t");if(c.length<8)continue;const codigo=code(c[1]);if(!codigo)continue;out.push({codigo,descricao:String(c[2]??"").trim(),vendaUnidade:num(c[3]),estoqueLojaUnidade:num(c[4]),pendenteCaixa:boxes(c[5]),transitoCaixa:boxes(c[6]),estoqueCDCaixa:boxes(c[7]),fornecedor:"",pasta:"",pallet:0,areaVenda:1,abc:"a",valorCaixa:0,...quantidadeCaixaERP(c[5],c[6])})}return out})}
+function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new TextDecoder("windows-1252").decode(buf),lines=text.replace(/^\uFEFF/,"").split(/\r?\n/);if(lines.length<4)throw Error("ERP incompleto: esperado cabeçalho, totais, linha vazia e produtos.");const h=lines[0].split("\t").map(norm),expected=["ORDEM","CHAVE","DESCRICAO","QTDE VENDA","ESTOQUE (UN)","QTDE PED.PEND (CX)","QTDE EST.TRANSITO (CX)","EST. DEPOSITO (CX)"];if(!expected.every((x,i)=>h[i]===x))throw Error("Cabeçalho ERP ESTATÍSTICA não reconhecido.");const out=[];for(let i=3;i<lines.length;i++){const l=lines[i];if(!l.trim())continue;const c=l.split("\t");if(c.length<8)continue;const codigo=code(c[1]);if(!codigo)continue;out.push({codigo,descricao:String(c[2]??"").trim(),vendaUnidade:num(c[3]),estoqueLojaUnidade:num(c[4]),pendenteCaixa:boxes(c[5]),transitoCaixa:boxes(c[6]),estoqueCDCaixa:boxes(c[7]),fornecedor:"",pasta:"",pallet:0,areaVenda:1,abc:"a",valorCaixa:0,...quantidadeCaixaERP(c[5],c[6])})}return out})}
 function semEstoqueCD(p){return p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0}
 function emRuptura(p){return p.situacao==="FALTA"||p.situacao==="RUPTURA CD"}
 function pedidoFinalAtual(p){if(semEstoqueCD(p))return 0;return Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?state.manualOrders[p.codigo]:p.pedidoFinalArredondado}
