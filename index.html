@@ -195,6 +195,46 @@ table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th{p
 .abc-filter-actions strong{font-variant-numeric:tabular-nums}
 .abc-filter-actions button[aria-pressed="true"]{background:#164d7a;color:white;border-color:#164d7a}
 @media(max-width:650px){.abc-filter-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V20 — CORREÇÃO DE GRID: cada painel ocupa sua área, sem colunas órfãs. */
+@media (min-width:1100px){
+ main.desktop-layout{
+  grid-template-columns:minmax(270px,310px) minmax(0,1fr);
+  grid-template-areas:
+   "notice notice"
+   "operations operations"
+   "parameters kpis"
+   "reminder reminder"
+   "diagnostics diagnostics"
+   "filters abc"
+   "filters products"
+   "logistics logistics"
+   "suggestions suggestions"
+   "footer footer";
+  grid-auto-rows:auto;
+  align-items:start;
+ }
+ .stats-reminder{grid-area:reminder;min-width:0}
+ .abc-filter-panel{grid-area:abc;min-width:0}
+ .logistics-panel{grid-area:logistics;min-width:0;width:100%}
+ #logisticsPrint{grid-area:logistics}
+ #manualEditModal{grid-area:footer}
+ .filters-panel{grid-area:filters;align-self:stretch}
+ .products-panel{grid-area:products}
+ main.desktop-layout > *{min-width:0}
+ .logistics-panel .tablewrap{width:100%;max-height:460px}
+ .abc-filter-actions button{min-height:48px;font-size:13px}
+ .logistics-panel .pager{justify-content:flex-end}
+}
+@media (max-width:1099px){
+ .abc-filter-panel,.logistics-panel{width:100%;min-width:0}
+ .abc-filter-actions button{min-height:44px}
+}
+@media (max-width:720px){
+ .abc-filter-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .logistics-panel .tablewrap{max-height:48vh}
+ .logistics-panel .pager{justify-content:center}
+}
 </style>
 </head>
 <body>
