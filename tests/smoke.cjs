@@ -15,6 +15,13 @@ async function checkViewport(browser, width) {
     );
     assert.match(await page.locator('#notice').innerText(), /^Bases internas carregadas/);
 
+    const filterPanel = page.locator('.filters-panel');
+    const filterToggle = filterPanel.locator('summary');
+    assert.equal(await filterPanel.evaluate(element => element.open), true);
+    assert(await page.locator('#supplierFilter').isVisible());
+    assert.equal(await page.locator('#filters button:visible').count(), 15);
+    assert(await page.locator('#onlyRupture').isVisible());
+
     const panels = await page.locator('.hero,.params-panel,.diagnostics-panel,.filters-panel,.products-panel,.logistics-panel')
       .evaluateAll(elements => elements.map(element => {
         const { x, width, right } = element.getBoundingClientRect();
@@ -42,15 +49,13 @@ async function checkViewport(browser, width) {
       assert.equal(await filter.getAttribute('aria-pressed'), 'true');
     }
 
-    const filterPanel = page.locator('.filters-panel');
-    const filterToggle = filterPanel.locator('summary');
-    await filterToggle.click();
-    assert.equal(await filterPanel.evaluate(element => element.open), true);
-    assert(await page.locator('#supplierFilter').isVisible());
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
       'Page overflowed horizontally after importing and opening filters');
     await filterToggle.click();
     assert.equal(await filterPanel.evaluate(element => element.open), false);
+    assert(!(await page.locator('#supplierFilter').isVisible()));
+    await filterToggle.click();
+    assert(await page.locator('#supplierFilter').isVisible());
 
     await page.locator('#suggestBtn').click();
     assert(await page.locator('#suggestions').isVisible());
