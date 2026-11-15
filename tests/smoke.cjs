@@ -156,6 +156,55 @@ async function checkDynamicABC(page) {
   assert.equal(await page.locator('#rows td').first().innerText(), '201');
 }
 
+async function checkInferredFolders(page) {
+  await page.locator('[data-abc-filter=""]').click();
+  const cadastro = (codigo, descricao, pasta) => ({ codigo, descricao, pasta, valorCaixa: 10, pallet: 10 });
+  const mix = [
+    cadastro('301', 'Amaciante Comfort Floral', 'LIMPEZA'),
+    cadastro('302', 'Amaciante Comfort Intenso', 'LIMPEZA'),
+    cadastro('303', 'Amaciante Comfort Azul', 'LIMPEZA'),
+    cadastro('304', 'Desinfetante Marca A', 'LIMPEZA'),
+    cadastro('305', 'Desinfetante Marca B', 'LIMPEZA'),
+    cadastro('306', 'Desinfetante Marca C', 'PERFUMARIA'),
+    cadastro('312', 'Amaciante Comfort Sem Pasta', ' '),
+    cadastro('314', 'Amaciante Comfort Pasta Oficial', 'LIMPEZA'),
+  ];
+  await page.locator('#baseFile').setInputFiles({
+    name: 'bases-pastas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ mix, part: [] })),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
+
+  const header = 'Ordem\tChave\tDescricao\tQtde Venda\tEstoque (Un)\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)';
+  const products = [
+    ['311', 'AMACIANTE COMFORT SEM MIX'],
+    ['312', 'AMACIANTE COMFORT SEM PASTA'],
+    ['313', 'DESINFETANTE MARCA CONFLITO'],
+    ['314', 'AMACIANTE COMFORT PASTA OFICIAL'],
+  ];
+  const report = [header, '\tTotal', '', ...products.map(([host, description], i) =>
+    [i + 1, host, description, 120, 0, '00 x 012,0 + 000', '00 x 012,0 + 000', '20 x 012,0 + 000'].join('\t')
+  )].join('\r\n');
+  await page.locator('#erpFile').setInputFiles({
+    name: 'pastas.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
+
+  const rows = await page.locator('#rows tr').evaluateAll(items =>
+    items.map(row => [row.cells[6].textContent, row.cells[11].textContent]));
+  assert.deepEqual(rows.map(row => row[0]), ['LIMPEZA', 'LIMPEZA', '', 'LIMPEZA']);
+  assert.match(rows[0][1], /SEM CADASTRO MIX.*PASTA CLASSIFICADA POR SEMELHANÇA/);
+  assert.match(rows[1][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
+  assert.doesNotMatch(rows[2][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
+  assert.doesNotMatch(rows[3][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
+
+  await page.locator('[data-filter="LIMPEZA"]').click();
+  assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['311', '312', '314']);
+  await page.locator('#suggestBtn').click();
+  const suggestions = await page.locator('#suggestionRows').innerText();
+  assert.match(suggestions, /AMACIANTE COMFORT SEM PASTA/);
+  assert.doesNotMatch(suggestions, /AMACIANTE COMFORT SEM MIX/);
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -233,6 +282,7 @@ async function checkViewport(browser, width) {
       await checkRuptureCD(page);
       await checkERPBoxSize(page);
       await checkDynamicABC(page);
+      await checkInferredFolders(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
