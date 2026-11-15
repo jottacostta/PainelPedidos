@@ -492,7 +492,7 @@ function indexarPastasPorDescricao(cadastros){
  const referencias=new Map();
  for(const cadastro of cadastros){
   const prefixo=prefixoDaDescricao(cadastro.descricao);
-  const pasta=norm(cadastro.pasta);
+  const pasta=String(cadastro.pasta??"").trim();
   if(!prefixo||!pasta)continue;
   const referencia=referencias.get(prefixo);
   if(!referencia){
@@ -500,7 +500,7 @@ function indexarPastasPorDescricao(cadastros){
    continue;
   }
   referencia.total++;
-  if(referencia.pasta!==pasta)referencia.divergente=true;
+  if(norm(referencia.pasta)!==norm(pasta))referencia.divergente=true;
  }
  return referencias;
 }
