@@ -68,8 +68,9 @@ h3 { font-size: 15px; }
 .brand-mark {
   display: grid; place-items: center; flex: 0 0 40px; height: 40px;
   border-radius: 12px; background: var(--brand); color: var(--yellow);
-  font-weight: 850; font-size: 22px;
+  font-weight: 850; font-size: 22px; text-decoration: none;
 }
+.brand-mark:hover { background: var(--brand-dark); }
 .company { display: block; font-size: 15px; font-weight: 750; line-height: 1.22; }
 .business { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
 .top-nav { display: flex; gap: 24px; font-weight: 650; color: var(--brand); }
@@ -298,7 +299,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <header class="topbar">
   <div class="topbar-inner">
     <div class="identity">
-      <span class="brand-mark" aria-hidden="true">G</span>
+      <a class="brand-mark" id="downloadHtml" href="./index.html" download="PainelPedidos.html" aria-label="Baixar cópia HTML do painel" title="Baixar cópia HTML do painel">G</a>
       <div><strong class="company">Guanabara</strong><span class="business">Reposição JBS · Operação local</span></div>
     </div>
     <nav class="top-nav" aria-label="Seções do painel">
@@ -678,6 +679,7 @@ $("clearBtn").onclick=async()=>{if(!confirm("Apagar os produtos processados dest
 async function start(){try{const base=await decompressBase();state.mix=base.mix;state.part=base.part;notice(`Bases internas carregadas: MIX ${fmt.format(state.mix.length)} · PART GON ${fmt.format(state.part.length)}. Aplicação pronta para importar ERP. Nenhum dado anterior foi restaurado.`,"ok");if("indexedDB" in window){const req=indexedDB.deleteDatabase(DB);req.onerror=()=>console.warn("Não foi possível limpar o armazenamento local antigo.");req.onblocked=()=>console.warn("Feche outras abas da aplicação para concluir a limpeza do armazenamento antigo.")}}catch(e){notice("Falha ao carregar as bases incorporadas: "+e.message,"error")}}
 // Move keyboard and visual focus to the result once the existing action renders it.
 $("suggestBtn").addEventListener("click", () => $("suggestionsTitle").focus());
+$("downloadHtml").href=window.location.href;
 start();
 })();
 </script>
