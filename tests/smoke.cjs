@@ -2,6 +2,54 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
+async function checkRuptureCD(page) {
+  const base = {
+    vendaUnidade: 30, estoqueLojaUnidade: 0, quantidadeCaixa: 1,
+    pendenteCaixa: 0, transitoCaixa: 0, abc: 'A', areaVenda: 1,
+    valorCaixa: 10, alertasCadastro: [],
+  };
+  const backup = { products: [
+    { ...base, codigo: '01', descricao: 'CD ESGOTADO', estoqueCDCaixa: 0 },
+    { ...base, codigo: '02', descricao: 'CD COM ESTOQUE', estoqueCDCaixa: 20 },
+  ] };
+  await page.locator('#backupFile').setInputFiles({
+    name: 'backup-test.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Backup restaurado'));
+  assert(!(await page.locator('#suggestions').isVisible()));
+  assert.equal(await page.locator('#suggestionRows tr').count(), 0);
+
+  const zero = page.locator('#rows tr').filter({ hasText: 'CD ESGOTADO' });
+  const available = page.locator('#rows tr').filter({ hasText: 'CD COM ESTOQUE' });
+  assert.equal(await zero.locator('td').nth(5).innerText(), 'RUPTURA CD');
+  assert.equal(await zero.locator('td.order-column').innerText(), '0');
+  assert.equal(await zero.locator('[data-edit-code]').count(), 0);
+  assert.equal(await available.locator('td').nth(5).innerText(), 'FALTA');
+
+  await available.locator('[data-edit-code]').click();
+  await page.locator('#manualEditValue').fill('5');
+  await page.locator('#saveManualEdit').click();
+  assert.match(await available.locator('td.order-column').innerText(), /^5/);
+  await page.locator('#onlyRupture').check();
+  assert.equal(await page.locator('#rows tr.rupture-row').count(), 2);
+  await page.locator('#onlyRupture').uncheck();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#exportBtn').click();
+  const download = await downloadPromise;
+  const chunks = [];
+  for await (const chunk of await download.createReadStream()) chunks.push(chunk);
+  const csv = Buffer.concat(chunks).toString('utf8');
+  const blockedRow = csv.split('\r\n').find(line => line.startsWith('"01";'));
+  assert(blockedRow);
+  assert.deepEqual(blockedRow.split(';').slice(9, 13), ['"0"', '"0"', '"0"', '"0"']);
+
+  await page.locator('#suggestBtn').click();
+  const suggestions = await page.locator('#suggestionRows').innerText();
+  assert.match(suggestions, /CD COM ESTOQUE/);
+  assert.doesNotMatch(suggestions, /CD ESGOTADO/);
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -39,6 +87,8 @@ async function checkViewport(browser, width) {
       null, { timeout: 30000 },
     );
     assert.match(await page.locator('#notice').innerText(), /^ERP importado: 3/);
+    assert.equal((await page.locator('#kProducts').innerText()).trim(), '0');
+    await page.locator('#hideZero').uncheck();
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
     assert.deepEqual(await page.locator('#products th').allTextContents(), [
       'HOST', 'DESCRIÇÃO', 'VENDA', 'ESTOQUE UN', 'CD CX', 'SITUAÇÃO',
@@ -48,7 +98,8 @@ async function checkViewport(browser, width) {
     const cells = await firstProduct.locator('td').allTextContents();
     assert.equal(cells.length, 12);
     assert.equal(cells[0], '384667');
-    assert.deepEqual(cells.slice(2, 5), ['10', '0', '0']);
+    assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
+    assert.equal(cells[9], '0');
     assert.equal(await firstProduct.locator('td:nth-child(10).order-column').count(), 1);
 
     for (const curve of ['A', '']) {
@@ -71,6 +122,8 @@ async function checkViewport(browser, width) {
     await page.emulateMedia({ media: 'print' });
     assert(await page.locator('#printTitle').isVisible());
     assert(!(await page.locator('#products').isVisible()));
+    await page.emulateMedia({ media: 'screen' });
+    if (width === 1366) await checkRuptureCD(page);
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
   } finally {
