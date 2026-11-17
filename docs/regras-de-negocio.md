@@ -13,6 +13,8 @@
 
 ## Reposição e acompanhamento
 
+- A área de venda é calculada para cada produto como a venda média diária em caixas multiplicada por dois. Um dia corresponde à exposição na gôndola e o outro ao pulmão no depósito da loja. Essa parcela é somada à cobertura ABC e substitui a consulta à base PART GON.
+
 - Estoque do CD zerado gera a situação **RUPTURA CD**, com pedido final e sugestão zerados. A edição fica indisponível nessa situação.
 - O pedido considera necessidade de cobertura e área de venda, estoque da loja, pendências e trânsito. Quando o cálculo é negativo, a coluna **Alertas** detalha esses componentes e estima quantos dias de venda o excedente representa, desde que exista média de venda positiva. A sugestão de reposição é zero nesse caso.
 - O operador pode ajustar manualmente o pedido com uma quantidade inteira de caixas igual ou maior que zero. Gere as sugestões depois do ajuste para atualizar o pedido impresso.
