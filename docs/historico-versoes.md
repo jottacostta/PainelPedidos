@@ -13,6 +13,7 @@
 | [#11](https://github.com/jottacostta/PainelPedidos/pull/11) e [#15](https://github.com/jottacostta/PainelPedidos/pull/15) | Curva ABC pelo volume vendido em caixas, recalculada no grupo selecionado por filtro operacional ou fornecedor. |
 | [#12](https://github.com/jottacostta/PainelPedidos/pull/12) e [#14](https://github.com/jottacostta/PainelPedidos/pull/14) | Detalhamento de pedidos negativos e estimativa de dias de venda do excedente. |
 | [#13](https://github.com/jottacostta/PainelPedidos/pull/13) | Classificação de pastas por semelhança com o MIX. |
+| [#17](https://github.com/jottacostta/PainelPedidos/pull/17) | Exposição e pulmão calculados pela venda média diária × 2, em substituição à consulta à base PART GON. |
 
 ## Versões anteriores
 

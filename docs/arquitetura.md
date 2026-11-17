@@ -2,9 +2,9 @@
 
 ## Aplicação
 
-O `index.html` reúne a interface, os estilos, o JavaScript e as bases iniciais MIX e PART GON em um único arquivo. Na abertura, o navegador descomprime as bases internas. A importação, os cálculos e a preparação dos arquivos para exportação e impressão acontecem no próprio dispositivo.
+O `index.html` reúne a interface, os estilos, o JavaScript e a base inicial MIX em um único arquivo. Na abertura, o navegador descomprime a base interna. A importação, os cálculos e a preparação dos arquivos para exportação e impressão acontecem no próprio dispositivo.
 
-O ERP ESTATÍSTICA é lido como texto tabulado, decodificado em Windows-1252. O cabeçalho identifica o formato. O painel cruza os itens do ERP com MIX e PART GON pelo código HOST. A matriz opcional é um JSON com uma lista de códigos e alimenta o filtro de matriz. Para substituir as bases da sessão, importe um JSON com os arrays `mix` e `part` e reimporte o ERP.
+O ERP ESTATÍSTICA é lido como texto tabulado, decodificado em Windows-1252. O cabeçalho identifica o formato. O painel cruza os itens do ERP com o MIX pelo código HOST. A matriz opcional é um JSON com uma lista de códigos e alimenta o filtro de matriz. Para substituir a base da sessão, importe um JSON com o array `mix` e reimporte o ERP.
 
 ## Sessão e backup
 

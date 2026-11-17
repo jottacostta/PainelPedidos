@@ -22,7 +22,7 @@ async function checkBackupAndLogistics(page) {
   const base = {
     vendaUnidade: 30, estoqueLojaUnidade: 0, estoqueCDCaixa: 20,
     quantidadeCaixa: 1, pendenteCaixa: 0, transitoCaixa: 0, abc: 'A',
-    areaVenda: 1, valorCaixa: 10, alertasCadastro: [],
+    areaVenda: 99, valorCaixa: 10, alertasCadastro: ['SEM PART GON'],
   };
   const backup = {
     products: [
@@ -41,7 +41,8 @@ async function checkBackupAndLogistics(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
 
   const order = page.locator('#rows tr').filter({ hasText: 'ZETA' });
-  assert.equal(await order.locator('.order-column').innerText(), '7');
+  assert.equal(await order.locator('.order-column').innerText(), '8');
+  assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('9');
   await page.locator('#saveManualEdit').click();
@@ -81,7 +82,7 @@ async function checkBackupAndLogistics(page) {
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
   assert.equal(await page.locator('#daysA').inputValue(), '8');
-  assert.equal(await order.locator('.order-column').innerText(), '7');
+  assert.equal(await order.locator('.order-column').innerText(), '8');
   await page.locator('[data-filter="MATRIZ"]').click();
   assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['601']);
 }
@@ -130,16 +131,16 @@ async function checkRuptureCD(page) {
   await page.locator('#hideNegative').uncheck();
   const transit = page.locator('#rows tr').filter({ hasText: 'PEDIDO NEGATIVO COM TRANSITO' });
   const stock = page.locator('#rows tr').filter({ hasText: 'PEDIDO NEGATIVO COM ESTOQUE' });
-  assert.equal(await transit.locator('td.order-column').innerText(), '-8');
+  assert.equal(await transit.locator('td.order-column').innerText(), '-9');
   const transitAlert = await transit.locator('.product-alerts').innerText();
   assert.match(transitAlert, /estoque loja 0,04, pendentes 0, trânsito 8/);
-  assert.match(transitAlert, /necessidade com área de venda 1/);
+  assert.match(transitAlert, /necessidade com área de venda 0/);
   assert.match(transitAlert, /Sugestão 0/);
   assert.match(transitAlert, /Sem estimativa de dias para o excedente/);
   assert.match(transitAlert, /ALERTA CADASTRAL EXISTENTE/);
   const stockAlert = await stock.locator('.product-alerts').innerText();
   assert.match(stockAlert, /estoque loja 2, pendentes 0, trânsito 0/);
-  assert.match(stockAlert, /Excedente de 1 cx equivale a 30 dias de venda/);
+  assert.match(stockAlert, /Excedente de 2 cx equivale a 60 dias de venda/);
 
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportBtn').click();
@@ -147,7 +148,7 @@ async function checkRuptureCD(page) {
   const chunks = [];
   for await (const chunk of await download.createReadStream()) chunks.push(chunk);
   const csv = Buffer.concat(chunks).toString('utf8');
-  assert.match(csv, /Excedente de 1 cx equivale a 30 dias de venda/);
+  assert.match(csv, /Excedente de 2 cx equivale a 60 dias de venda/);
   const blockedRow = csv.split('\r\n').find(line => line.startsWith('"01";'));
   assert(blockedRow);
   assert.deepEqual(blockedRow.split(';').slice(9, 13), ['"0"', '"0"', '"0"', '"0"']);
@@ -169,7 +170,6 @@ async function checkERPBoxSize(page) {
   const base = {
     mix: codes.map(codigo => ({ codigo, quantidadeCaixa: 6, valorCaixa: 10, pallet: 10 })),
     abc: codes.map(codigo => ({ codigo, abc: 'A' })),
-    part: codes.map(codigo => ({ codigo, areaVenda: 1 })),
   };
   await page.locator('#baseFile').setInputFiles({
     name: 'bases-test.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(base)),
@@ -192,17 +192,17 @@ async function checkERPBoxSize(page) {
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
   assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
-  assert.deepEqual(rows.map(row => row[9]), ['6', '2', '—', '—']);
+  assert.deepEqual(rows.map(row => row[9]), ['7', '2', '—', '—']);
   assert.match(rows[2][11], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
   assert.match(rows[3][11], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
 }
 
 async function checkDynamicABC(page) {
   const products = [
-    { id: '201', sales: 60, packageSize: 12, curve: 'C', order: '4' },
+    { id: '201', sales: 60, packageSize: 12, curve: 'C', order: '3' },
     { id: '202', sales: 1500, packageSize: 100, curve: 'B', order: '6' },
-    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '20' },
-    { id: '204', sales: 0, packageSize: 12, curve: 'C', order: '2' },
+    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '24' },
+    { id: '204', sales: 0, packageSize: 12, curve: 'C', order: '1' },
     { id: '205', sales: 5000, packageSize: 0, curve: '', order: '—' },
   ];
   const base = {
@@ -258,7 +258,7 @@ async function checkInferredFolders(page) {
     cadastro('314', 'Amaciante Comfort Pasta Oficial', 'LIMPEZA'),
   ];
   await page.locator('#baseFile').setInputFiles({
-    name: 'bases-pastas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ mix, part: [] })),
+    name: 'bases-pastas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ mix })),
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
 
@@ -318,9 +318,9 @@ async function checkScopedABC(page) {
   assert.deepEqual(await hosts(), ['502']);
   assert.equal(await page.locator('#abcCountAll').innerText(), '3');
   assert.equal(await page.locator('#abcCountA').innerText(), '1');
-  assert.equal(await page.locator('#rows td.order-column').innerText(), '20');
+  assert.equal(await page.locator('#rows td.order-column').innerText(), '24');
   await page.locator('#rows [data-edit-code="502"]').click();
-  assert.equal(await page.locator('#manualEditValue').inputValue(), '20');
+  assert.equal(await page.locator('#manualEditValue').inputValue(), '24');
   await page.locator('#cancelManualEdit').click();
 
   await page.locator('[data-abc-filter="B"]').click();
