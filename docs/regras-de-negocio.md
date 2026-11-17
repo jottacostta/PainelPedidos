@@ -4,6 +4,7 @@
 
 - A quantidade de unidades por caixa vem da embalagem que aparece nos campos de pedido pendente ou trânsito do ERP ESTATÍSTICA, no formato `caixas x unidades por caixa + unidades avulsas`. Se as duas embalagens informadas divergirem ou se nenhuma for válida, o painel sinaliza o cadastro.
 - Se o item estiver sem pasta, o painel procura o mesmo prefixo de duas palavras da descrição no MIX. A classificação por semelhança pode usar um único cadastro com pasta preenchida. Quando há referências em pastas diferentes, o item fica sem classificação automática.
+- Para biscoitos, o painel trata BISCOIT, BISCOT, BISCOITO e BISCOITOS como o mesmo tipo. Quando há referência para as três primeiras palavras, usa esse grupo para distinguir linhas da mesma marca. Sem esse grupo, usa as duas primeiras palavras.
 
 ## Curva ABC e cobertura
 
