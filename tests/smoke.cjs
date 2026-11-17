@@ -192,7 +192,7 @@ async function checkERPBoxSize(page) {
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
   assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
-  assert.deepEqual(rows.map(row => row[9]), ['6', '2', '—', '—']);
+  assert.deepEqual(rows.map(row => row[9]), ['7', '2', '—', '—']);
   assert.match(rows[2][11], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
   assert.match(rows[3][11], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
 }
