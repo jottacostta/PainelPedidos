@@ -3,7 +3,7 @@
 ## Importação e cadastro
 
 - A quantidade de unidades por caixa vem da embalagem que aparece nos campos de pedido pendente ou trânsito do ERP ESTATÍSTICA, no formato `caixas x unidades por caixa + unidades avulsas`. Se as duas embalagens informadas divergirem ou se nenhuma for válida, o painel sinaliza o cadastro.
-- Se o item estiver sem pasta, o painel procura o mesmo prefixo de duas palavras da descrição no MIX. A classificação por semelhança exige pelo menos três cadastros de referência e concordância entre suas pastas.
+- Se o item estiver sem pasta, o painel procura o mesmo prefixo de duas palavras da descrição no MIX. A classificação por semelhança pode usar um único cadastro com pasta preenchida. Quando há referências em pastas diferentes, o item fica sem classificação automática.
 
 ## Curva ABC e cobertura
 

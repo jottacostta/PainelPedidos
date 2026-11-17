@@ -500,10 +500,9 @@ function indexarPastasPorDescricao(cadastros){
   if(!prefixo||!pasta)continue;
   const referencia=referencias.get(prefixo);
   if(!referencia){
-   referencias.set(prefixo,{pasta,total:1,divergente:false});
+   referencias.set(prefixo,{pasta,divergente:false});
    continue;
   }
-  referencia.total++;
   if(norm(referencia.pasta)!==norm(pasta))referencia.divergente=true;
  }
  return referencias;
@@ -516,7 +515,7 @@ function cruzar(erp){
  if(m){mm++;p.pasta=String(m.pasta??"");p.pallet=num(m.pallet);p.fornecedor=String(m.fornecedor??"");p.comprador=String(m.comprador??"");p.valorCaixa=num(m.valorCaixa);p.valorUnitario=num(m.valorUnitario)}else{missM++;p.alertasCadastro.push("SEM CADASTRO MIX")}
  if(!p.pasta.trim()){
   const referencia=pastasPorDescricao.get(prefixoDaDescricao(p.descricao));
-  if(referencia&&referencia.total>=3&&!referencia.divergente){
+  if(referencia&&!referencia.divergente){
    p.pasta=referencia.pasta;
    p.alertasCadastro.push("PASTA CLASSIFICADA POR SEMELHANÇA");
   }

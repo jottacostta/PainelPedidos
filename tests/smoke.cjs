@@ -254,6 +254,7 @@ async function checkInferredFolders(page) {
     cadastro('304', 'Desinfetante Marca A', 'LIMPEZA'),
     cadastro('305', 'Desinfetante Marca B', 'LIMPEZA'),
     cadastro('306', 'Desinfetante Marca C', 'PERFUMARIA'),
+    cadastro('135450', 'AGUARDENTE CANINHA DA ROCA 500ml', 'BEBIDAS'),
     cadastro('312', 'Amaciante Comfort Sem Pasta', ' '),
     cadastro('314', 'Amaciante Comfort Pasta Oficial', 'LIMPEZA'),
   ];
@@ -268,6 +269,7 @@ async function checkInferredFolders(page) {
     ['312', 'AMACIANTE COMFORT SEM PASTA'],
     ['313', 'DESINFETANTE MARCA CONFLITO'],
     ['314', 'AMACIANTE COMFORT PASTA OFICIAL'],
+    ['2151717', 'AGUARDENTE CANINHA DA ROCA 275ml'],
   ];
   const report = [header, '\tTotal', '', ...products.map(([host, description], i) =>
     [i + 1, host, description, 120, 0, '00 x 012,0 + 000', '00 x 012,0 + 000', '20 x 012,0 + 000'].join('\t')
@@ -275,15 +277,16 @@ async function checkInferredFolders(page) {
   await page.locator('#erpFile').setInputFiles({
     name: 'pastas.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report),
   });
-  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 5'));
 
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => [row.cells[6].textContent, row.cells[11].textContent]));
-  assert.deepEqual(rows.map(row => row[0]), ['LIMPEZA', 'LIMPEZA', '', 'LIMPEZA']);
+  assert.deepEqual(rows.map(row => row[0]), ['LIMPEZA', 'LIMPEZA', '', 'LIMPEZA', 'BEBIDAS']);
   assert.match(rows[0][1], /SEM CADASTRO MIX.*PASTA CLASSIFICADA POR SEMELHANÇA/);
   assert.match(rows[1][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
   assert.doesNotMatch(rows[2][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
   assert.doesNotMatch(rows[3][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
+  assert.match(rows[4][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
 
   await page.locator('[data-filter="LIMPEZA"]').click();
   assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['311', '312', '314']);
