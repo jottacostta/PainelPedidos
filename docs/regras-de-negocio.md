@@ -13,7 +13,18 @@
 
 ## Reposição e acompanhamento
 
-- A área de venda é calculada para cada produto como a venda média diária em caixas multiplicada por dois. Um dia corresponde à exposição na gôndola e o outro ao pulmão no depósito da loja. Essa parcela é somada à cobertura ABC e substitui a consulta à base PART GON.
+### Pedido final automático
+
+1. Venda média diária em caixas = unidades vendidas ÷ unidades por caixa ÷ dias de venda.
+2. Cobertura ABC em caixas = venda média diária × dias da curva.
+3. Exposição e pulmão em caixas = venda média diária × 2. Um dia abastece a gôndola e o outro fica como reserva no depósito da loja. Esse cálculo substitui a consulta à base PART GON.
+4. Pedido bruto em caixas = cobertura ABC + exposição e pulmão − estoque da loja em caixas − pendências − trânsito.
+
+Para um item A com 360 unidades vendidas em 30 dias e 12 unidades por caixa, a média é de 1 caixa por dia. Com 36 unidades na loja, 1 caixa pendente e 2 em trânsito, o pedido final é **7 + 2 − 3 − 1 − 2 = 3 caixas**.
+
+O painel arredonda resultados positivos para cima e negativos para baixo. Ao restaurar um backup antigo, recalcula a parcela de exposição e pulmão com o período de vendas restaurado.
+
+### Regras operacionais
 
 - Estoque do CD zerado gera a situação **RUPTURA CD**, com pedido final e sugestão zerados. A edição fica indisponível nessa situação.
 - O pedido considera necessidade de cobertura e área de venda, estoque da loja, pendências e trânsito. Quando o cálculo é negativo, a coluna **Alertas** detalha esses componentes e estima quantos dias de venda o excedente representa, desde que exista média de venda positiva. A sugestão de reposição é zero nesse caso.
