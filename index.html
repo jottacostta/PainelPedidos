@@ -200,6 +200,7 @@ tbody tr.rupture-row:hover { background: var(--red-light); }
 
 #suggestions { scroll-margin-top: 16px; }
 #suggestionSummary { margin: 10px 0; }
+.logistics-actions { justify-content: flex-end; }
 .logistics-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 13px 0; }
 .logistics-summary span { padding: 8px 11px; border-radius: 7px; background: var(--brand-light); color: var(--brand-dark); font-weight: 650; }
 .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
@@ -362,13 +363,16 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de sugestões de reposição" style="margin-top:8px"><table><thead><tr><th>PRIORIDADE</th><th>HOST</th><th>PRODUTO</th><th>FORNECEDOR</th><th>ABC</th><th>ESTOQUE CX</th><th>PEDIDO CX</th><th>VALOR</th><th>MOTIVO</th></tr></thead><tbody id="suggestionRows"></tbody></table></div>
 <div class="print-signatures"><div>Responsável pela conferência: __________________________________</div><div>Digitado no CPD por: __________________________ Data: ____/____/________</div></div>
 </section>
-  <section class="panel logistics-panel no-print" id="logisticsPanel">
-<div class="panel-head"><h2>Acompanhamento de pedidos</h2><button id="printLogistics" class="good" type="button">Imprimir acompanhamento</button></div>
+  <details class="panel logistics-panel no-print" id="logisticsPanel" open>
+<summary><h2>Acompanhamento de pedidos</h2></summary>
+<div class="support-content">
+<div class="panel-head logistics-actions"><button id="printLogistics" class="good" type="button">Imprimir acompanhamento</button></div>
 <p class="small">Tabela independente da lista de produtos. Exibe apenas itens com quantidade pendente ou em trânsito maior que zero, conforme o ERP importado. Os filtros operacionais também se aplicam.</p>
 <div class="logistics-summary"><span id="pendingSummary">Pedidos pendentes: 0 itens / 0 caixas</span><span id="transitSummary">Em trânsito: 0 itens / 0 caixas</span></div>
 <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de pedidos pendentes e em trânsito"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>FORNECEDOR</th><th>PASTA</th><th>PEDIDO PENDENTE (CX)</th><th>EM TRÂNSITO (CX)</th></tr></thead><tbody id="logisticsRows"><tr><td colspan="6">Importe o ERP para consultar pedidos pendentes e em trânsito.</td></tr></tbody></table></div>
 <div class="pager" style="margin-top:10px"><button id="logisticsPrev" disabled type="button">Anterior</button><span id="logisticsPageLabel" class="small">Página 1 de 1</span><button id="logisticsNext" disabled type="button">Próxima</button><span class="small">100 registros por página</span></div>
-</section>
+</div>
+</details>
 <section id="logisticsPrint" aria-hidden="true">
 <h1>JBS REPOSIÇÃO — ACOMPANHAMENTO DE PEDIDOS</h1>
 <div id="logisticsPrintInfo"></div>
