@@ -70,6 +70,9 @@ h3 { font-size: 15px; }
   border-radius: 12px; background: var(--brand); color: var(--yellow);
   font-weight: 850; font-size: 22px;
 }
+a.brand-mark { text-decoration: none; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+a.brand-mark:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 57, 48, .25); }
+a.brand-mark:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
 .company { display: block; font-size: 15px; font-weight: 750; line-height: 1.22; }
 .business { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
 .top-nav { display: flex; gap: 24px; font-weight: 650; color: var(--brand); }
@@ -235,7 +238,24 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 .edit-modal h3 { margin-bottom: 8px; }
 .edit-modal p { margin: 8px 0; color: var(--muted); }
 .edit-modal input { width: 100%; margin-top: 5px; }
+.calc { margin-top: 12px; padding: 10px; border: 1px solid var(--line, #dbe7e1); border-radius: 12px; background: #f6faf8; }
+.calc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.calc-chips button { min-height: 32px; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; color: var(--brand); background: var(--white); border: 1px solid #c4d6ce; }
+.calc-chips button b { font-variant-numeric: tabular-nums; }
+.calc-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-height: 44px; padding: 8px 11px; border-radius: 8px; background: var(--white); border: 1px solid #c4d6ce; font-variant-numeric: tabular-nums; }
+.calc-display span { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 14px; }
+.calc-display b { flex: none; font-size: 19px; color: var(--ink); }
+.calc-display.is-error b { color: var(--red); font-size: 14px; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.calc-keys button { min-height: 44px; padding: 0; justify-content: center; font-size: 17px; font-weight: 650; background: var(--white); }
+.calc-keys .calc-op { color: var(--brand); background: #e7f2ec; }
+.calc-keys .calc-clear { color: #8a3b3e; background: #fbeeee; }
+.calc-keys .calc-eq { color: var(--white); background: var(--brand); border-color: var(--brand); }
+.calc-use { width: 100%; justify-content: center; margin-top: 8px; min-height: 44px; color: var(--brand); background: #fff7d1; border-color: #e1c25c; font-weight: 700; }
 .edit-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+/* Com a calculadora, Cancelar e Aplicar ficam sempre visíveis no rodapé da janela. */
+.edit-modal-actions { position: sticky; bottom: -23px; margin: 14px -23px -23px; padding: 12px 23px 23px; background: var(--white); border-top: 1px solid #e3ece8; }
+@media (max-width: 650px) { .calc-keys button { min-height: 44px; font-size: 16px; } .calc-keys { gap: 5px; } .edit-modal { padding: 18px; } .edit-modal-actions { bottom: -18px; margin: 12px -18px -18px; padding: 10px 18px 18px; } }
 
 @media (max-width: 900px) {
   main, .topbar-inner { padding-inline: 20px; }
@@ -307,7 +327,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <header class="topbar">
   <div class="topbar-inner">
     <div class="identity">
-      <span class="brand-mark" aria-hidden="true">G</span>
+      <a class="brand-mark" id="offlineDownload" href="index.html" download="PainelPedidos-offline.html" title="Baixar o painel para usar sem internet" aria-label="Baixar o painel para usar sem internet">G</a>
       <div><strong class="company">Guanabara</strong><span class="business">Reposição JBS · Operação local</span></div>
     </div>
     <nav class="top-nav" aria-label="Seções do painel">
@@ -431,6 +451,12 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   <p id="manualEditProduct"></p>
   <label for="manualEditValue">Nova quantidade (caixas)</label>
   <input id="manualEditValue" type="number" step="1" min="0" inputmode="numeric">
+  <div class="calc" id="manualCalc" role="group" aria-label="Calculadora do pedido">
+   <div class="calc-chips" id="calcChips" aria-label="Valores do produto"></div>
+   <div class="calc-display" aria-live="polite"><span id="calcExpr">0</span><b id="calcResult">= 0</b></div>
+   <div class="calc-keys"><button type="button" data-calc="C" class="calc-clear" aria-label="Limpar">C</button><button type="button" data-calc="⌫" class="calc-clear" aria-label="Apagar">⌫</button><button type="button" data-calc="(" class="calc-op">(</button><button type="button" data-calc=")" class="calc-op">)</button><button type="button" data-calc="7">7</button><button type="button" data-calc="8">8</button><button type="button" data-calc="9">9</button><button type="button" data-calc="÷" class="calc-op" aria-label="Dividir">÷</button><button type="button" data-calc="4">4</button><button type="button" data-calc="5">5</button><button type="button" data-calc="6">6</button><button type="button" data-calc="×" class="calc-op" aria-label="Multiplicar">×</button><button type="button" data-calc="1">1</button><button type="button" data-calc="2">2</button><button type="button" data-calc="3">3</button><button type="button" data-calc="−" class="calc-op" aria-label="Subtrair">−</button><button type="button" data-calc="0">0</button><button type="button" data-calc="," aria-label="Vírgula">,</button><button type="button" data-calc="=" class="calc-eq" aria-label="Calcular">=</button><button type="button" data-calc="+" class="calc-op" aria-label="Somar">+</button></div>
+   <button type="button" class="calc-use" id="calcUse">Usar resultado no pedido</button>
+  </div>
   <p>Gere as sugestões para incluir este ajuste no pedido impresso.</p>
   <div class="edit-modal-actions"><button type="button" id="cancelManualEdit">Cancelar</button><button type="button" class="good" id="saveManualEdit">Aplicar</button></div>
  </div>
@@ -452,10 +478,10 @@ const CAMPOS_ERP=[
  {id:"f153",seq:"153",nome:"Pedidos Pendentes (CX)",uso:"Desconta pendências do pedido",chave:"pendenteCaixa"},
  {id:"f154",seq:"154",nome:"Estoque em Trânsito (CX)",uso:"Desconta trânsito do pedido",chave:"transitoCaixa"},
  {id:"f164",seq:"164",nome:"Estoque Depósito (CX)",uso:"Regra RUPTURA CD e filtros pelo CD",chave:"estoqueCDCaixa"},
- // "-*-" no depósito indica item que não passa pelo CD. Marcado: fica fora da RUPTURA CD.
- {id:"f164x",seq:"164",nome:"Itens com -*- no CD fora da RUPTURA CD",uso:"Desmarcado: -*- conta como CD zerado e gera RUPTURA CD",chave:"estoqueCDCaixa",depende:"f164"},
+ // "-*-" no depósito: por padrão conta como CD zerado (RUPTURA CD, pedido 0). Marcado: o item fica fora da ruptura.
+ {id:"f164x",seq:"164",nome:"Itens com -*- no CD fora da RUPTURA CD",uso:"Desmarcado: -*- conta como CD zerado e gera RUPTURA CD",chave:"estoqueCDCaixa",depende:"f164",padrao:false},
 ];
-function camposPadrao(){return Object.fromEntries(CAMPOS_ERP.map(c=>[c.id,true]))}
+function camposPadrao(){return Object.fromEntries(CAMPOS_ERP.map(c=>[c.id,c.padrao!==false]))}
 const fmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2});
 const pct=v=>(v*100).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";
 const money=v=>(Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -475,6 +501,20 @@ function quantidadeCaixaERP(pendente, transito){
 }
 function boxes(v){const s=String(v??"").trim();if(!s||s==="-*-" )return 0;const m=s.match(formatoCaixasERP);if(m){const n=Number(m[1].replace(/\./g,""));return Number.isFinite(n)?n:0}const lead=s.match(/^\s*([\d.]+)/);if(lead){const n=Number(lead[1].replace(/\./g,""));return Number.isFinite(n)?n:0}return num(s)}
 function notice(msg,type=""){const n=$("notice");n.className="notice "+type;n.textContent=msg}
+// "G" do cabeçalho: baixa uma cópia completa do painel (HTML único com as bases) para usar sem internet.
+async function baixarVersaoOffline(e){
+ e.preventDefault();
+ if(location.protocol==="file:"){notice("Você já está usando a versão offline deste painel.","ok");return}
+ try{
+  notice("Preparando a versão offline…");
+  const r=await fetch(location.href.split("#")[0],{cache:"no-store"});
+  if(!r.ok)throw Error("HTTP "+r.status);
+  const url=URL.createObjectURL(new Blob([await r.arrayBuffer()],{type:"text/html"}));
+  const a=document.createElement("a");a.href=url;a.download="PainelPedidos-offline.html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  notice("Versão offline baixada: abra o arquivo PainelPedidos-offline.html no navegador, mesmo sem internet.","ok");
+ }catch(err){notice("Não foi possível baixar a versão offline ("+err.message+"). Abra o painel no navegador padrão do aparelho e tente de novo.","bad")}
+}
 async function decompressBase(){
  const b64=$("embedded-base").textContent.trim();const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
  if(!("DecompressionStream" in window))throw Error("Este Chrome não oferece descompressão gzip. Atualize o Chrome para carregar as bases internas.");
@@ -492,7 +532,7 @@ function index(rows){
 function colunasDosProdutos(products){
  return new Set(CAMPOS_ERP.filter(c=>c.fixo||products.some(p=>p[c.chave]!=null)).map(c=>c.id));
 }
-function campoMarcado(id){return CAMPOS_ERP.find(c=>c.id===id)?.fixo||state.config.campos?.[id]!==false}
+function campoMarcado(id){const c=CAMPOS_ERP.find(x=>x.id===id);return !!c?.fixo||(state.config.campos?.[id]??c?.padrao!==false)}
 function campoAtivo(id){const c=CAMPOS_ERP.find(x=>x.id===id);return campoMarcado(id)&&state.colunasERP.has(id)&&(!c?.depende||campoAtivo(c.depende))}
 function pendenteUsado(p){return campoAtivo("f153")?num(p.pendenteCaixa):0}
 function transitoUsado(p){return campoAtivo("f154")?num(p.transitoCaixa):0}
@@ -679,7 +719,7 @@ function visible(){
 }
 let logisticsPage=0;
 function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
-function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${semEstoqueCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="13">Nenhum produto encontrado.</td></tr>';
+function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${p.cdNaoInformado?"-*-":fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${semEstoqueCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="13">Nenhum produto encontrado.</td></tr>';
  $("count").textContent=`${fmt.format(all.length)} registros`;const pages=Math.max(1,Math.ceil(all.length/state.pageSize));$("pageLabel").textContent=`Página ${state.page+1} de ${pages}`;$("prev").disabled=state.page===0;$("next").disabled=state.page>=pages-1;
  const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));$("kStockCost").textContent=campoAtivo("f052")?money(p.reduce((s,x)=>s+num(x.estoqueCustoERP),0)):"—";$("abcRuleText").textContent=abcPorFaturamento()?"Curva ABC por faturamento (campo 001 · Valor Venda) no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do valor acumulado, B até 95% e C o restante.":"Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.";renderCampos();renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
 function renderDiag(){const d=state.diagnostics;if(!d)return;const pct=(a)=>`${(a/d.total*100).toFixed(1).replace(".",",")}%`;const items=[["ERP analisado",fmt.format(d.total)],["MIX encontrado",`${fmt.format(d.mm)} (${pct(d.mm)})`],["MIX ausente",fmt.format(d.missM)]];$("diagnostics").innerHTML=items.map(([a,b])=>`<div class="diag">${a}<b>${b}</b></div>`).join("")}
@@ -701,6 +741,7 @@ function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"],["VALOR_VENDA","valorVendaERP"],["CUSTO_VENDA","custoVendaERP"],["MARGEM","margemVenda"],["ESTOQUE_CUSTO","estoqueCustoERP"],["ORIGEM_VALOR_CAIXA","origemValorCaixa"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):c[1]==="pendenteCaixa"?pendenteUsado(p):c[1]==="transitoCaixa"?transitoUsado(p):c[1]==="margemVenda"?(p.margemVenda==null?"":pct(p.margemVenda)):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
 function download(blob,name){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;limparSugestoes();render()}));
+$("offlineDownload").addEventListener("click",baixarVersaoOffline);
 $("erpFields").addEventListener("change",e=>{const c=e.target.closest("input[data-campo]");if(!c)return;const campo=CAMPOS_ERP.find(x=>x.id===c.dataset.campo);if(!campo||campo.fixo||(campo.depende&&!campoMarcado(campo.depende)))return;state.config={...state.config,campos:{...state.config.campos,[campo.id]:c.checked}};recalcularCampos();notice(`Campo ${campo.seq} · ${campo.nome} ${c.checked?"marcado":"desmarcado"}. Produtos recalculados.`,"ok")});
 $("logisticsPrev").addEventListener("click",()=>{if(logisticsPage>0){logisticsPage--;renderLogistics()}});
 $("logisticsNext").addEventListener("click",()=>{logisticsPage++;renderLogistics()});
@@ -733,7 +774,47 @@ $("ruptureKpi").onclick=toggleRuptureFilter;
 $("ruptureKpi").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleRuptureFilter()}};
 $("prev").onclick=()=>{state.page=Math.max(0,state.page-1);render()};$("next").onclick=()=>{state.page++;render()};
 $("applyParams").onclick=async()=>{state.config={...state.config,diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);limparSugestoes();render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
-$("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
+$("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;abrirCalc(p);$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
+// Calculadora do pedido: avalia + − × ÷ e parênteses sem eval; vírgula é o separador decimal.
+const calc$={expr:""};
+const fmtCalc=v=>Number.isFinite(v)?v.toLocaleString("pt-BR",{maximumFractionDigits:2}):"—";
+function avaliarConta(expr){
+ const t=expr.replace(/\s/g,"").replace(/,/g,".").match(/\d+(?:\.\d+)?|\.\d+|[+\-−×÷*/()]/g)||[];
+ if(t.join("")!==expr.replace(/\s/g,"").replace(/,/g,"."))throw Error("conta inválida");
+ let i=0;const ver=()=>t[i],tomar=()=>t[i++];
+ const fator=()=>{const k=tomar();if(k==="(")return(()=>{const v=soma();if(tomar()!==")")throw Error("parêntese aberto");return v})();if(k==="−"||k==="-")return -fator();if(k==="+")return fator();const n=Number(k);if(k==null||!Number.isFinite(n))throw Error("conta incompleta");return n};
+ const termo=()=>{let v=fator();while(["×","÷","*","/"].includes(ver())){const op=tomar(),d=fator();if((op==="÷"||op==="/")&&d===0)throw Error("divisão por zero");v=op==="×"||op==="*"?v*d:v/d}return v};
+ const soma=()=>{let v=termo();while(["+","−","-"].includes(ver())){const op=tomar();v=op==="+"?v+termo():v-termo()}return v};
+ if(!t.length)return 0;const v=soma();if(i<t.length)throw Error("conta inválida");return v;
+}
+function resultadoConta(){try{return{v:avaliarConta(calc$.expr)}}catch(e){return{erro:e.message}}}
+function renderCalc(){
+ const r=resultadoConta(),box=document.querySelector(".calc-display");
+ $("calcExpr").textContent=calc$.expr||"0";
+ box.classList.toggle("is-error",!!r.erro&&calc$.expr!=="");
+ $("calcResult").textContent=r.erro?(calc$.expr?r.erro:"= 0"):`= ${fmtCalc(r.v)}`;
+ const caixas=r.erro||!calc$.expr?null:Math.max(0,Math.ceil(r.v-1e-9));
+ $("calcUse").textContent=caixas==null?"Usar resultado no pedido":`Usar ${fmtCalc(caixas)} cx no pedido${r.v!==caixas?" (arredondado para cima)":""}`;
+ $("calcUse").disabled=caixas==null;
+}
+function teclaCalc(k){
+ if(k==="C")calc$.expr="";
+ else if(k==="⌫")calc$.expr=calc$.expr.slice(0,-1);
+ else if(k==="="){const r=resultadoConta();if(!r.erro)calc$.expr=fmtCalc(r.v).replace(/\./g,"")}
+ else calc$.expr+=k;
+ renderCalc();
+}
+function abrirCalc(p){
+ calc$.expr="";
+ const cx=num(p.quantidadeCaixa),period=Math.max(1,state.config.periodoVenda),valid=cx>0;
+ const chips=[["Sugestão",p.pedidoSugestao,"cx"]];
+ if(valid){chips.push(["Venda/dia",num(p.vendaUnidade)/cx/period,"cx"],["Estoque",num(p.estoqueLojaUnidade)/cx,"cx"]);const pt=pendenteUsado(p)+transitoUsado(p);if(pt)chips.push(["Pend.+trâns.",pt,"cx"])}
+ const n=v=>String(Math.round(v*100)/100).replace(".",",");
+ $("calcChips").innerHTML=chips.map(([r,v,u])=>`<button type="button" data-calc-insert="${n(v)}" title="Inserir na conta">${r} <b>${fmtCalc(Math.round(v*100)/100)}</b> ${u}</button>`).join("")+(valid&&cx!==1?`<button type="button" data-calc-insert="÷${n(cx)}" title="Converter unidades em caixas">÷ ${fmtCalc(cx)} un/cx</button>`:"");
+ renderCalc();
+}
+$("manualCalc").addEventListener("click",e=>{const k=e.target.closest("[data-calc]");if(k){teclaCalc(k.dataset.calc);return}const ins=e.target.closest("[data-calc-insert]");if(ins){calc$.expr+=ins.dataset.calcInsert;renderCalc()}});
+$("calcUse").onclick=()=>{const r=resultadoConta();if(r.erro||!calc$.expr)return;$("manualEditValue").value=Math.max(0,Math.ceil(r.v-1e-9));$("manualEditValue").focus()};
 function closeManualEdit(){$("manualEditModal").classList.remove("open");state.editingCode=null}
 $("cancelManualEdit").onclick=closeManualEdit;
 $("manualEditModal").addEventListener("click",e=>{if(e.target.id==="manualEditModal")closeManualEdit()});

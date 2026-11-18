@@ -19,7 +19,9 @@ O painel **Campos do ERP ESTATÍSTICA** lista os campos do relatório com uma ca
 | 153 · Pedidos Pendentes (CX) | Pendências descontadas do pedido. | Pendência considerada zero no pedido, no filtro DIRETO e no acompanhamento. |
 | 154 · Estoque em Trânsito (CX) | Trânsito descontado do pedido. | Trânsito considerado zero no pedido e no acompanhamento. |
 | 164 · Estoque Depósito (CX) | Regra RUPTURA CD e filtros que exigem estoque no CD. | Regra RUPTURA CD desligada. Filtros de pasta e CDS deixam de exigir estoque no CD. |
-| 164 · Itens com `-*-` no CD fora da RUPTURA CD | `-*-` indica item que não passa pelo CD. O item segue o cálculo normal, sem RUPTURA CD. | `-*-` conta como CD zerado e gera RUPTURA CD. Fica bloqueada quando o 164 está desmarcado. |
+| 164 · Itens com `-*-` no CD fora da RUPTURA CD (desmarcada por padrão) | O item com `-*-` segue o cálculo normal, sem RUPTURA CD. | `-*-` conta como CD zerado: RUPTURA CD e pedido 0. Fica bloqueada quando o 164 está desmarcado. |
+
+Na tabela, a coluna CD CX mostra `-*-` para esses itens, para diferenciar do CD zerado (`0`). No CSV, `ESTOQUE_CD_CX` continua numérico (0).
 
 - Margem = (valor da venda − custo da venda) ÷ valor da venda. Margem negativa gera o alerta **MARGEM NEGATIVA**.
 - Sem venda no período ou sem custo informado, o valor do pedido usa o valor da caixa do MIX. O CSV informa a origem em `ORIGEM_VALOR_CAIXA`.
@@ -49,4 +51,5 @@ O painel arredonda resultados positivos para cima e negativos para baixo. Ao res
 - Estoque do CD zerado (`00 x 001,0 + 000`) gera a situação **RUPTURA CD**, com pedido final e sugestão zerados. A edição fica indisponível nessa situação.
 - O pedido considera necessidade de cobertura e área de venda, estoque da loja, pendências e trânsito. Quando o cálculo é negativo, a coluna **Alertas** detalha esses componentes e estima quantos dias de venda o excedente representa, desde que exista média de venda positiva. A sugestão de reposição é zero nesse caso.
 - O operador pode ajustar manualmente o pedido com uma quantidade inteira de caixas igual ou maior que zero. Gere as sugestões depois do ajuste para atualizar o pedido impresso.
+- A janela de edição tem uma calculadora com + − × ÷ e parênteses. Os atalhos inserem na conta a sugestão do sistema, a venda por dia, o estoque da loja e pendente mais trânsito, todos em caixas, e a divisão pelas unidades por caixa. **Usar no pedido** leva o resultado ao campo, arredondado para cima e nunca abaixo de zero. O pedido só muda ao tocar em **Aplicar**.
 - O acompanhamento reúne itens com pendência ou trânsito acima de zero, mostra totais em caixas e tem impressão própria. O CSV exporta a revisão de produtos conforme os filtros ativos.
