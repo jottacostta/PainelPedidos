@@ -5,7 +5,7 @@ Painel web offline para revisar o estoque, calcular a reposição e preparar ped
 ## Como usar
 
 1. Abra `index.html` em um navegador com suporte à descompressão gzip por `DecompressionStream`, como o Chromium.
-2. Importe o **ERP ESTATÍSTICA** com os campos **02, 49, 153, 154 e 164**. A importação aceita `.xls`, `.txt` e `.tsv` com conteúdo tabulado e reconhece o relatório pelo cabeçalho.
+2. Importe o **ERP ESTATÍSTICA** com os campos **001, 002, 003, 049, 052, 153, 154 e 164**. Os campos 002 e 049 são obrigatórios. Os demais podem faltar no arquivo ou ser desmarcados no painel **Campos do ERP ESTATÍSTICA**. A importação aceita `.xls`, `.txt` e `.tsv` com conteúdo tabulado e reconhece o relatório pelo cabeçalho.
 3. Confira a cobertura cadastral, ajuste os filtros e revise a coluna **Alertas**. Se necessário, ajuste o **Pedido Final** antes de gerar as sugestões.
 4. Gere as sugestões para imprimir o pedido do CPD. Use **Acompanhamento de pedidos** para consultar e imprimir pendências e trânsito.
 5. Para continuar em outra sessão, baixe o backup JSON e restaure-o ao reabrir o painel. Ajustes manuais do pedido valem para a sessão atual.
