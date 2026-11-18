@@ -112,7 +112,7 @@ main > *, .panel { min-width: 0; }
 }
 .notice.ok { background: var(--brand-light); border-color: #c8e3d5; color: #164838; }
 .notice.error { background: var(--red-light); border-color: #f0c1bf; color: #861e26; }
-.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
 .kpi {
   min-width: 0; padding: 15px 16px 17px; border: 1px solid var(--line); border-radius: 13px;
   background: var(--white); box-shadow: 0 2px 5px #18332a06;
@@ -120,6 +120,7 @@ main > *, .panel { min-width: 0; }
 .kpi-title { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 650; }
 .kpi-title::before { content: ""; flex: 0 0 8px; height: 8px; border-radius: 50%; background: #24876d; }
 .kpi b { display: block; margin-top: 9px; font-size: clamp(22px, 2.4vw, 34px); line-height: 1.1; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kpi-money b, .kpi-stock-cost b { font-size: clamp(17px, 1.75vw, 30px); white-space: nowrap; overflow-wrap: normal; }
 .kpi-rupture { cursor: pointer; }
 .kpi-rupture .kpi-title { color: var(--red); }
 .kpi-rupture .kpi-title::before { background: #c94d51; }
@@ -212,6 +213,12 @@ tbody tr.rupture-row:hover { background: var(--red-light); }
 .param-value { display: flex; align-items: center; gap: 6px; }
 .param-value input { width: min(100%, 78px); }
 #applyParams { grid-column: 1/-1; justify-self: start; }
+.erp-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 4px 14px; margin-bottom: 10px; }
+.erp-field { display: flex; align-items: flex-start; gap: 8px; min-height: 44px; padding: 4px 0; font-size: 13px; cursor: pointer; }
+.erp-field input { flex: none; width: 16px; height: 16px; margin-top: 2px; accent-color: var(--brand); }
+.erp-field input:disabled { cursor: not-allowed; }
+.erp-field small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+.erp-field.is-missing { opacity: .6; }
 .diag { background: var(--canvas); border-radius: 8px; padding: 9px; font-size: 12px; overflow-wrap: anywhere; }
 .diag b { display: block; font-size: 15px; }
 .support-content p { margin-bottom: 10px; }
@@ -232,7 +239,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 @media (max-width: 900px) {
   main, .topbar-inner { padding-inline: 20px; }
   .hero { grid-template-columns: 1fr; gap: 19px; }
-  .kpis { gap: 8px; }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .kpi { padding: 12px 10px; }
   .kpi-title { font-size: 12px; }
 }
@@ -248,7 +255,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   .hero :is(.file-control, .file-label, button) { width: 100%; min-width: 0; }
   .hero :is(.file-label, button) { padding: 7px; font-size: 12px; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .kpi-money { grid-column: 1/-1; }
+  .kpi-money, .kpi-stock-cost { grid-column: 1/-1; }
   .kpi b { margin-top: 5px; }
   .panel { padding: 12px; }
   .support-panel { padding-block: 4px; }
@@ -326,6 +333,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
     <div class="kpi"><span class="kpi-title">Com pedido</span><b id="kOrders">0</b></div>
     <div class="kpi"><span class="kpi-title">Caixas sugeridas</span><b id="kBoxes">0</b></div>
     <div class="kpi kpi-money"><span class="kpi-title">Valor estimado</span><b id="kValue">R$ 0,00</b></div>
+    <div class="kpi kpi-stock-cost" title="Campo 052 · Estoque a Custo com ICMS"><span class="kpi-title">Estoque a custo</span><b id="kStockCost">—</b></div>
   </section>
 
   <section class="panel products-panel" id="products" aria-labelledby="productsTitle">
@@ -335,7 +343,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
     </div>
     <div class="product-tools">
       <div class="search-row"><input id="search" class="search" type="search" placeholder="Código, descrição, fornecedor ou pasta" aria-label="Pesquisar produtos"><span class="meta" id="count">0 registros</span></div>
-      <p class="small">Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.</p>
+      <p class="small" id="abcRuleText">Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.</p>
       <div class="abc-filter-actions" role="group" aria-label="Filtrar por curva ABC">
 <button type="button" data-abc-filter="" aria-pressed="true">Todas <strong id="abcCountAll">0</strong></button>
 <button type="button" data-abc-filter="A" aria-pressed="false">Curva A <strong id="abcCountA">0</strong></button>
@@ -353,7 +361,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
         </div>
       </details>
     </div>
-    <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de produtos"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>VENDA</th><th>ESTOQUE UN</th><th>CD CX</th><th>SITUAÇÃO</th><th>PASTA</th><th>CX/CAIXA</th><th>ABC</th><th class="right order-column">PEDIDO FINAL</th><th>FORNECEDOR</th><th>ALERTAS</th></tr></thead><tbody id="rows"><tr><td colspan="12">Importe o ERP para começar.</td></tr></tbody></table></div>
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de produtos"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>VENDA</th><th>ESTOQUE UN</th><th>CD CX</th><th>SITUAÇÃO</th><th>PASTA</th><th>CX/CAIXA</th><th>ABC</th><th class="right order-column">PEDIDO FINAL</th><th>FORNECEDOR</th><th class="right">MARGEM</th><th>ALERTAS</th></tr></thead><tbody id="rows"><tr><td colspan="13">Importe o ERP para começar.</td></tr></tbody></table></div>
 <div class="pager" style="margin-top:10px"><button id="prev" disabled>Anterior</button><span id="pageLabel" class="small">Página 1 de 1</span><button id="next" disabled>Próxima</button><span class="small">100 registros por página</span></div>
   </section>
 
@@ -406,10 +414,11 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <button id="clearBtn" type="button">Limpar dados</button></div>
       </div>
     </details>
-    <details class="panel support-panel">
+    <details class="panel support-panel fields-panel" open>
       <summary>Campos do ERP ESTATÍSTICA</summary>
       <div class="support-content">
-        <p class="small">Campos para gerar na estatística: <strong>02 · 49 · 153 · 154 · 164</strong>.</p>
+        <p class="small">Campos para gerar na estatística: <strong>001 · 002 · 003 · 049 · 052 · 153 · 154 · 164</strong>. Desmarque um campo para o cálculo deixar de usá-lo.</p>
+        <div id="erpFields" class="erp-fields" role="group" aria-label="Campos do ERP usados no cálculo"></div>
         <p class="small">Selecione o arquivo do ERP ESTATÍSTICA (.xls, .txt ou .tsv). O nome é livre. O relatório é identificado pelo cabeçalho.</p>
       </div>
     </details>
@@ -432,9 +441,22 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 "use strict";
 (() => {
 const $=id=>document.getElementById(id);
+// Campos do relatório ERP ESTATÍSTICA. 002 e 049 são a base da fórmula e não podem ser desmarcados.
+const CAMPOS_ERP=[
+ {id:"f001",seq:"001",nome:"Valor Venda",uso:"Curva ABC por faturamento e margem",chave:"valorVendaERP"},
+ {id:"f002",seq:"002",nome:"Quantidade Vendida em Unidade",uso:"Média de venda",chave:"vendaUnidade",fixo:true},
+ {id:"f003",seq:"003",nome:"Custo Venda",uso:"Valor do pedido pelo custo e margem",chave:"custoVendaERP"},
+ {id:"f049",seq:"049",nome:"Estoque em Unidade",uso:"Estoque da loja",chave:"estoqueLojaUnidade",fixo:true},
+ {id:"f052",seq:"052",nome:"Estoque a Custo com ICMS",uso:"Indicador de estoque em R$",chave:"estoqueCustoERP"},
+ {id:"f153",seq:"153",nome:"Pedidos Pendentes (CX)",uso:"Desconta pendências do pedido",chave:"pendenteCaixa"},
+ {id:"f154",seq:"154",nome:"Estoque em Trânsito (CX)",uso:"Desconta trânsito do pedido",chave:"transitoCaixa"},
+ {id:"f164",seq:"164",nome:"Estoque Depósito (CX)",uso:"Regra RUPTURA CD e filtros pelo CD",chave:"estoqueCDCaixa"},
+];
+function camposPadrao(){return Object.fromEntries(CAMPOS_ERP.map(c=>[c.id,true]))}
 const fmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2});
+const pct=v=>(v*100).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";
 const money=v=>(Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const state={mix:[],products:[],matrix:new Set(),manualOrders:{},editingCode:null,filter:"",search:"",hideNegative:true,hideZero:true,onlyNegative:false,onlyZero:false,onlyRupture:false,supplier:"",page:0,pageSize:100,config:{diasA:7,diasB:10,diasC:14,periodoVenda:30},diagnostics:null};
+const state={mix:[],products:[],matrix:new Set(),manualOrders:{},editingCode:null,filter:"",search:"",hideNegative:true,hideZero:true,onlyNegative:false,onlyZero:false,onlyRupture:false,supplier:"",page:0,pageSize:100,config:{diasA:7,diasB:10,diasC:14,periodoVenda:30,campos:camposPadrao()},colunasERP:new Set(),diagnostics:null};
 const norm=v=>String(v??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toUpperCase();
 const code=v=>String(v??"").replace(/-/g,"").trim().replace(/\.0$/,"");
 function num(v){if(typeof v==="number")return Number.isFinite(v)?v:0;let s=String(v??"").trim();if(!s)return 0;if(s.includes(",")&&s.includes("."))s=s.replace(/\./g,"").replace(",",".");else s=s.replace(",",".");let n=Number(s);return Number.isFinite(n)?n:0}
@@ -464,12 +486,22 @@ function index(rows){
  }
  return map;
 }
+function colunasDosProdutos(products){
+ return new Set(CAMPOS_ERP.filter(c=>c.fixo||products.some(p=>p[c.chave]!=null)).map(c=>c.id));
+}
+function campoMarcado(id){return CAMPOS_ERP.find(c=>c.id===id)?.fixo||state.config.campos?.[id]!==false}
+function campoAtivo(id){return campoMarcado(id)&&state.colunasERP.has(id)}
+function pendenteUsado(p){return campoAtivo("f153")?num(p.pendenteCaixa):0}
+function transitoUsado(p){return campoAtivo("f154")?num(p.transitoCaixa):0}
+function abcPorFaturamento(){return campoAtivo("f001")}
 function classificarABC(products){
+ const porFaturamento=abcPorFaturamento();
  const vendasPorHost=new Map();
  for(const p of products){
   const embalagem=num(p.quantidadeCaixa);
   if(embalagem<=0)continue;
-  const caixas=num(p.vendaUnidade)/embalagem;
+  // Volume do ranking: valor vendido (campo 001) ou caixas vendidas.
+  const caixas=porFaturamento?num(p.valorVendaERP):num(p.vendaUnidade)/embalagem;
   vendasPorHost.set(p.codigo,(vendasPorHost.get(p.codigo)||0)+caixas);
  }
  const ranking=[...vendasPorHost].filter(([,caixas])=>caixas>0);
@@ -527,7 +559,7 @@ function cruzar(erp){
  state.diagnostics={total:erp.length,mm,missM};
  return products
 }
-function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidade),pend=num(p.pendenteCaixa),trans=num(p.transitoCaixa),cx=num(p.quantidadeCaixa),abc=String(p.abc??"a").trim().toUpperCase(),days=abc==="A"?state.config.diasA:abc==="B"?state.config.diasB:state.config.diasC,period=Math.max(1,state.config.periodoVenda);
+function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidade),pend=pendenteUsado(p),trans=transitoUsado(p),cx=num(p.quantidadeCaixa),abc=String(p.abc??"a").trim().toUpperCase(),days=abc==="A"?state.config.diasA:abc==="B"?state.config.diasB:state.config.diasC,period=Math.max(1,state.config.periodoVenda);
  const valid=cx>0,avg=valid?(venda/cx)/period:null,stock=valid?estoque/cx:null;
  const cobertura=valid?avg*days:0;
  const area=(avg??0)*2;
@@ -540,13 +572,40 @@ function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidad
  p.pedido=rupturaCD?0:p.pedidoPrincipal==null?null:((pend===0&&trans===0&&cx!==1&&p.pedidoPrincipal<1&&estoque<cx/2)?1:p.pedidoPrincipal);
  p.pedidoFinalArredondado=p.pedido==null?null:(p.pedido>0?Math.ceil(p.pedido):p.pedido<0?Math.floor(p.pedido):0);
  const critical=p.alertasCadastro.includes("SEM CADASTRO MIX")||p.alertasCadastro.includes("QUANTIDADE POR CAIXA INVÁLIDA");
- p.pedidoSugestao=critical||p.pedidoFinalArredondado==null?0:Math.max(0,p.pedidoFinalArredondado);p.valorPedido=p.pedidoSugestao*Math.max(0,num(p.valorCaixa));p.mediaVendaCxDia=avg;p.estoqueLojaCx=stock;return p}
-function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new TextDecoder("windows-1252").decode(buf),lines=text.replace(/^\uFEFF/,"").split(/\r?\n/);if(lines.length<4)throw Error("ERP incompleto: esperado cabeçalho, totais, linha vazia e produtos.");const h=lines[0].split("\t").map(norm),expected=["ORDEM","CHAVE","DESCRICAO","QTDE VENDA","ESTOQUE (UN)","QTDE PED.PEND (CX)","QTDE EST.TRANSITO (CX)","EST. DEPOSITO (CX)"];if(!expected.every((x,i)=>h[i]===x))throw Error("Cabeçalho ERP ESTATÍSTICA não reconhecido.");const out=[];for(let i=3;i<lines.length;i++){const l=lines[i];if(!l.trim())continue;const c=l.split("\t");if(c.length<8)continue;const codigo=code(c[1]);if(!codigo)continue;out.push({codigo,descricao:String(c[2]??"").trim(),vendaUnidade:num(c[3]),estoqueLojaUnidade:num(c[4]),pendenteCaixa:boxes(c[5]),transitoCaixa:boxes(c[6]),estoqueCDCaixa:boxes(c[7]),fornecedor:"",pasta:"",pallet:0,valorCaixa:0,...quantidadeCaixaERP(c[5],c[6])})}return out})}
-function semEstoqueCD(p){return p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0}
+ p.pedidoSugestao=critical||p.pedidoFinalArredondado==null?0:Math.max(0,p.pedidoFinalArredondado);
+ // Campo 003: custo por caixa = custo da venda ÷ caixas vendidas. Sem custo ou sem venda, usa o valor da caixa do MIX.
+ const usaCusto=campoAtivo("f003")&&valid&&venda>0&&num(p.custoVendaERP)>0;
+ p.valorCaixaCalculo=usaCusto?num(p.custoVendaERP)/(venda/cx):Math.max(0,num(p.valorCaixa));
+ p.origemValorCaixa=usaCusto?"CUSTO ERP":"MIX";
+ const valorVenda=num(p.valorVendaERP);
+ p.margemVenda=campoAtivo("f001")&&campoAtivo("f003")&&valorVenda>0?(valorVenda-num(p.custoVendaERP))/valorVenda:null;
+ p.valorPedido=p.pedidoSugestao*p.valorCaixaCalculo;p.mediaVendaCxDia=avg;p.estoqueLojaCx=stock;return p}
+const COLUNAS_ERP={
+ chave:h=>h==="CHAVE",
+ descricao:h=>h==="DESCRICAO",
+ venda:h=>/^(QTDE?|QUANTIDADE)\.? ?VEND(A|IDA)\b/.test(h),
+ estoque:h=>/^(ESTOQUE|EST\.?) ?(\(|EM )?UN/.test(h),
+ pendente:h=>/PED.*PEND/.test(h)&&!/^(VALOR|VLR|VL)\b/.test(h),
+ transito:h=>/TRANSITO/.test(h)&&!/^(VALOR|VLR|VL)\b/.test(h),
+ cd:h=>/DEPOSITO/.test(h)&&!/\bUN\b|\(UN\)/.test(h),
+ valorVenda:h=>/^(VALOR|VLR|VL)\.? ?(DA |DE )?VENDA(\b|$)/.test(h)&&!/PREVIST|PROJETAD|PROMOC/.test(h),
+ custoVenda:h=>/^(CUSTO|CST)\.? ?(DA |DE )?VENDA(\b|$)/.test(h),
+ estoqueCusto:h=>/^(ESTOQUE|EST\.?) ?(A |AO )?CUSTO/.test(h),
+};
+function mapearColunasERP(cabecalho){
+ const h=cabecalho.map(norm),pos={};
+ for(const [chave,teste] of Object.entries(COLUNAS_ERP))pos[chave]=h.findIndex(teste);
+ const faltando=[["chave","CHAVE"],["descricao","DESCRICAO"],["venda","QTDE VENDA (002)"],["estoque","ESTOQUE (UN) (049)"]].filter(([k])=>pos[k]<0).map(([,n])=>n);
+ if(pos.pendente<0&&pos.transito<0)faltando.push("PEDIDO PENDENTE (153) ou TRÂNSITO (154), usados para ler a embalagem");
+ if(faltando.length)throw Error("Cabeçalho ERP ESTATÍSTICA não reconhecido. Faltam: "+faltando.join(", ")+".");
+ return pos;
+}
+function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new TextDecoder("windows-1252").decode(buf),lines=text.replace(/^﻿/,"").split(/\r?\n/);if(lines.length<4)throw Error("ERP incompleto: esperado cabeçalho, totais, linha vazia e produtos.");const pos=mapearColunasERP(lines[0].split("\t"));const cel=(c,k)=>pos[k]<0?undefined:c[pos[k]];const valor=(c,k)=>pos[k]<0?null:num(c[pos[k]]);const minimo=Math.max(...Object.values(pos))+1;const out=[];for(let i=3;i<lines.length;i++){const l=lines[i];if(!l.trim())continue;const c=l.split("\t");if(c.length<minimo)continue;const codigo=code(cel(c,"chave"));if(!codigo)continue;out.push({codigo,descricao:String(cel(c,"descricao")??"").trim(),vendaUnidade:num(cel(c,"venda")),estoqueLojaUnidade:num(cel(c,"estoque")),pendenteCaixa:pos.pendente<0?null:boxes(cel(c,"pendente")),transitoCaixa:pos.transito<0?null:boxes(cel(c,"transito")),estoqueCDCaixa:pos.cd<0?null:boxes(cel(c,"cd")),valorVendaERP:valor(c,"valorVenda"),custoVendaERP:valor(c,"custoVenda"),estoqueCustoERP:valor(c,"estoqueCusto"),fornecedor:"",pasta:"",pallet:0,valorCaixa:0,...quantidadeCaixaERP(cel(c,"pendente"),cel(c,"transito"))})}return out})}
+function semEstoqueCD(p){return campoAtivo("f164")&&p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0}
 function emRuptura(p){return p.situacao==="FALTA"||p.situacao==="RUPTURA CD"}
 function pedidoFinalAtual(p){if(semEstoqueCD(p))return 0;return Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?state.manualOrders[p.codigo]:p.pedidoFinalArredondado}
 function alertasProduto(p){
- const cadastro=p.alertasCadastro||[];
+ const cadastro=[...(p.alertasCadastro||[]),...(p.margemVenda!=null&&p.margemVenda<0?["MARGEM NEGATIVA"]:[])];
  const pedido=pedidoFinalAtual(p);
  if(!(pedido<0))return cadastro;
  const excedente=Math.abs(pedido);
@@ -555,27 +614,27 @@ function alertasProduto(p){
   ?`Excedente de ${fmt.format(excedente)} cx equivale a ${fmt.format(excedente/media)} dias de venda pela média do período.`
   :"Sem estimativa de dias para o excedente: média de vendas igual a zero ou negativa.";
  const estoque=fmt.format(p.estoqueLojaCx);
- const pendente=fmt.format(num(p.pendenteCaixa));
- const transito=fmt.format(num(p.transitoCaixa));
+ const pendente=fmt.format(pendenteUsado(p));
+ const transito=fmt.format(transitoUsado(p));
  const necessidade=fmt.format(p.necessidadeCaixa);
  const resumo=`PEDIDO NEGATIVO (cx): estoque loja ${estoque}, pendentes ${pendente}, trânsito ${transito}; necessidade com área de venda ${necessidade}. Sugestão 0. ${diasExcedente}`;
  return [resumo,...cadastro];
 }
 function sugestaoAtual(p){const final=pedidoFinalAtual(p),critical=(p.alertasCadastro||[]).includes("SEM CADASTRO MIX")||(p.alertasCadastro||[]).includes("QUANTIDADE POR CAIXA INVÁLIDA");return critical||final==null?0:Math.max(0,final)}
-function valorPedidoAtual(p){return sugestaoAtual(p)*Math.max(0,num(p.valorCaixa))}
+function valorPedidoAtual(p){return sugestaoAtual(p)*Math.max(0,num(p.valorCaixaCalculo??p.valorCaixa))}
 let selectedAbc="";
 function confirmedCurve(p){return (p.alertasCadastro||[]).includes("SEM CLASSIFICAÇÃO ABC")?"":String(p.abc||"").trim().toUpperCase()}
 function updateAbcControls(base){for(const key of ["A","B","C"])$("abcCount"+key).textContent=fmt.format(base.filter(p=>confirmedCurve(p)===key).length);$("abcCountAll").textContent=fmt.format(base.length);document.querySelectorAll("[data-abc-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.abcFilter===selectedAbc)))}
 function produtosDoGrupo(){
  let arr=state.products;
- if(state.filter==="CDS")arr=arr.filter(p=>num(p.estoqueCDCaixa)>=1&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
- else if(state.filter==="DIRETO")arr=arr.filter(p=>num(p.pendenteCaixa)===0&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
+ if(state.filter==="CDS")arr=arr.filter(p=>(!campoAtivo("f164")||num(p.estoqueCDCaixa)>=1)&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
+ else if(state.filter==="DIRETO")arr=arr.filter(p=>pendenteUsado(p)===0&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
  else if(state.filter==="MATRIZ")arr=arr.filter(p=>state.matrix.has(p.codigo));
  else if(state.filter){
   const cats={"CONSERVAS":["CONSERVAS"],"CEREAIS":["CEREAIS","RACAO / CEREAIS","CAFE / CEREAIS"],"LIMPEZA":["LIMPEZA"],"PRODUTOS INFLAMAVEIS":["PRODUTOS INFLAMAVEIS"],"ALIM_MASSAS":["ALIM INF","ALIM. INF","MASSAS"],"BEBIDAS_BISCOITO":["BEBIDAS","BISCOITO","BISCOITOS"],"PERFUMARIA":["PERFUMARIA","FL 96-P","FL 96-B"],"LATICINIOS":["LATICINIOS"],"AÇOUGUE":["ACOUGUE"],"EMBUTIDOS AÇOUGUE":["EMBUTIDOS ACOUGUE"],"SALGADOS":["SALGADOS"]};
   const allowed=(cats[state.filter]||[state.filter]).map(norm);
   arr=arr.filter(p=>allowed.includes(norm(p.pasta)));
-  if(state.filter!=="PRODUTOS INFLAMAVEIS")arr=arr.filter(p=>num(p.estoqueCDCaixa)>0);
+  if(state.filter!=="PRODUTOS INFLAMAVEIS"&&campoAtivo("f164"))arr=arr.filter(p=>num(p.estoqueCDCaixa)>0);
  }
  if(state.supplier)arr=arr.filter(p=>norm(p.fornecedor)===state.supplier);
  return arr;
@@ -616,15 +675,30 @@ function visible(){
  return arr
 }
 let logisticsPage=0;
-function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>num(p.pendenteCaixa)>0||num(p.transitoCaixa)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.pendenteCaixa)}</td><td class="right">${fmt.format(p.transitoCaixa)}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>num(p.pendenteCaixa)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,num(p.pendenteCaixa)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>num(p.transitoCaixa)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,num(p.transitoCaixa)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
-function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${semEstoqueCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="12">Nenhum produto encontrado.</td></tr>';
+function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
+function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${semEstoqueCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="13">Nenhum produto encontrado.</td></tr>';
  $("count").textContent=`${fmt.format(all.length)} registros`;const pages=Math.max(1,Math.ceil(all.length/state.pageSize));$("pageLabel").textContent=`Página ${state.page+1} de ${pages}`;$("prev").disabled=state.page===0;$("next").disabled=state.page>=pages-1;
- const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
+ const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));$("kStockCost").textContent=campoAtivo("f052")?money(p.reduce((s,x)=>s+Math.max(0,num(x.estoqueCustoERP)),0)):"—";$("abcRuleText").textContent=abcPorFaturamento()?"Curva ABC por faturamento (campo 001 · Valor Venda) no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do valor acumulado, B até 95% e C o restante.":"Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.";renderCampos();renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
 function renderDiag(){const d=state.diagnostics;if(!d)return;const pct=(a)=>`${(a/d.total*100).toFixed(1).replace(".",",")}%`;const items=[["ERP analisado",fmt.format(d.total)],["MIX encontrado",`${fmt.format(d.mm)} (${pct(d.mm)})`],["MIX ausente",fmt.format(d.missM)]];$("diagnostics").innerHTML=items.map(([a,b])=>`<div class="diag">${a}<b>${b}</b></div>`).join("")}
+function renderCampos(){
+ const carregado=state.products.length>0;
+ $("erpFields").innerHTML=CAMPOS_ERP.map(c=>{
+  const presente=state.colunasERP.has(c.id),marcado=campoMarcado(c.id);
+  const status=c.fixo?"obrigatório":!carregado?"aguardando ERP":!presente?"não encontrado no último ERP":marcado?"em uso":"desmarcado";
+  return `<label class="erp-field${carregado&&!presente?" is-missing":""}"><input type="checkbox" data-campo="${c.id}"${marcado?" checked":""}${c.fixo?" disabled":""}><span><b>${c.seq} · ${esc(c.nome)}</b><small>${esc(c.uso)} · ${status}</small></span></label>`;
+ }).join("");
+}
+function recalcularCampos(){
+ classificarABC(state.products);
+ state.products.forEach(calc);
+ limparSugestoes();
+ render();
+}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
+function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"],["VALOR_VENDA","valorVendaERP"],["CUSTO_VENDA","custoVendaERP"],["MARGEM","margemVenda"],["ESTOQUE_CUSTO","estoqueCustoERP"],["ORIGEM_VALOR_CAIXA","origemValorCaixa"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):c[1]==="pendenteCaixa"?pendenteUsado(p):c[1]==="transitoCaixa"?transitoUsado(p):c[1]==="margemVenda"?(p.margemVenda==null?"":pct(p.margemVenda)):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
 function download(blob,name){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;limparSugestoes();render()}));
+$("erpFields").addEventListener("change",e=>{const c=e.target.closest("input[data-campo]");if(!c)return;const campo=CAMPOS_ERP.find(x=>x.id===c.dataset.campo);if(!campo||campo.fixo)return;state.config={...state.config,campos:{...state.config.campos,[campo.id]:c.checked}};recalcularCampos();notice(`Campo ${campo.seq} · ${campo.nome} ${c.checked?"marcado":"desmarcado"}. Produtos recalculados.`,"ok")});
 $("logisticsPrev").addEventListener("click",()=>{if(logisticsPage>0){logisticsPage--;renderLogistics()}});
 $("logisticsNext").addEventListener("click",()=>{logisticsPage++;renderLogistics()});
 const DB="JBS_REPOSICAO_OFFLINE_V1";
@@ -640,7 +714,7 @@ function limparSugestoes(){
  $("suggestions").classList.add("hidden");
  $("suggestionRows").innerHTML="";
 }
-$("erpFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;notice("Lendo relatório ERP...");const erp=await parseERP(f);limparRevisaoPedido();state.products=cruzar(erp).map(calc);state.page=0;render();notice(`ERP importado: ${fmt.format(state.products.length)} produtos processados. Confira a cobertura cadastral antes de usar as sugestões.`,"ok");try{await save()}catch(err){console.warn(err)}}catch(err){notice("Falha na importação: "+err.message,"error")}finally{e.target.value=""}};
+$("erpFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;notice("Lendo relatório ERP...");const erp=await parseERP(f);limparRevisaoPedido();state.colunasERP=colunasDosProdutos(erp);state.products=cruzar(erp).map(calc);state.page=0;render();notice(`ERP importado: ${fmt.format(state.products.length)} produtos processados. Confira a cobertura cadastral antes de usar as sugestões.`,"ok");try{await save()}catch(err){console.warn(err)}}catch(err){notice("Falha na importação: "+err.message,"error")}finally{e.target.value=""}};
 $("baseFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data.mix))throw Error("JSON deve conter o array mix.");state.mix=data.mix;notice(`Bases atualizadas: MIX ${fmt.format(state.mix.length)}. Reimporte o ERP para recalcular.`,"ok")}catch(err){notice("Falha ao atualizar bases: "+err.message,"error")}finally{e.target.value=""}};
 $("matrixFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error("A matriz deve ser um array JSON de códigos.");state.matrix=new Set(data.map(code));if(state.filter==="MATRIZ"){limparSugestoes();state.page=0;logisticsPage=0}notice(`Matriz carregada: ${fmt.format(state.matrix.size)} códigos.`,"ok");render()}catch(err){notice(err.message,"error")}finally{e.target.value=""}};
 $("filters").onclick=e=>{const b=e.target.closest("button[data-filter]");if(!b)return;state.filter=b.dataset.filter;state.page=0;logisticsPage=0;limparSugestoes();document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("active",x===b));render()};
@@ -655,7 +729,7 @@ function toggleRuptureFilter(){state.onlyRupture=!state.onlyRupture;state.page=0
 $("ruptureKpi").onclick=toggleRuptureFilter;
 $("ruptureKpi").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleRuptureFilter()}};
 $("prev").onclick=()=>{state.page=Math.max(0,state.page-1);render()};$("next").onclick=()=>{state.page++;render()};
-$("applyParams").onclick=async()=>{state.config={diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);limparSugestoes();render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
+$("applyParams").onclick=async()=>{state.config={...state.config,diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);limparSugestoes();render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
 $("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
 function closeManualEdit(){$("manualEditModal").classList.remove("open");state.editingCode=null}
 $("cancelManualEdit").onclick=closeManualEdit;
@@ -665,11 +739,11 @@ $("saveManualEdit").onclick=()=>{const raw=$("manualEditValue").value,value=Numb
 $("exportBtn").onclick=csv;
 $("printLogistics").onclick=()=>{
  if(!state.products.length){notice("Importe o relatório ERP antes de imprimir o acompanhamento.","error");return}
- const items=filtrarCurva(operationalProducts()).filter(p=>num(p.pendenteCaixa)>0||num(p.transitoCaixa)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
+ const items=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
  if(!items.length){notice("Nenhum pedido pendente ou em trânsito para imprimir com os filtros atuais.","error");return}
- $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td>${fmt.format(p.pendenteCaixa)}</td><td>${fmt.format(p.transitoCaixa)}</td></tr>`).join("");
+ $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td>${fmt.format(pendenteUsado(p))}</td><td>${fmt.format(transitoUsado(p))}</td></tr>`).join("");
  $("logisticsPrintInfo").textContent=`Data: ${new Date().toLocaleString("pt-BR")} | Registros: ${fmt.format(items.length)} | Fornecedor: ${state.supplier||"TODOS"} | Pasta: ${state.folder||"TODAS"}`;
- $("logisticsPrintTotals").textContent=`Pendentes: ${fmt.format(items.filter(p=>num(p.pendenteCaixa)>0).length)} itens / ${fmt.format(items.reduce((v,p)=>v+Math.max(0,num(p.pendenteCaixa)),0))} caixas | Em trânsito: ${fmt.format(items.filter(p=>num(p.transitoCaixa)>0).length)} itens / ${fmt.format(items.reduce((v,p)=>v+Math.max(0,num(p.transitoCaixa)),0))} caixas`;
+ $("logisticsPrintTotals").textContent=`Pendentes: ${fmt.format(items.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(items.reduce((v,p)=>v+Math.max(0,pendenteUsado(p)),0))} caixas | Em trânsito: ${fmt.format(items.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(items.reduce((v,p)=>v+Math.max(0,transitoUsado(p)),0))} caixas`;
  document.body.classList.add("print-logistics");
  window.print();
 };
@@ -677,8 +751,8 @@ window.addEventListener("afterprint",()=>document.body.classList.remove("print-l
 $("printSuggestions").onclick=()=>{if(!$("suggestionRows").children.length){notice("Gere as sugestões antes de imprimir.","error");return}window.print()};
 $("suggestBtn").onclick=()=>{const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td></tr>`).join("")||'<tr><td colspan="9">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden")};
 $("saveBtn").onclick=()=>{const backup={version:1,createdAt:new Date().toISOString(),products:state.products,config:state.config,matrix:[...state.matrix]};download(new Blob([JSON.stringify(backup)],{type:"application/json"}),"JBS_BACKUP_LOCAL.json");notice("Backup JSON baixado para o aparelho.","ok")};
-$("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);$("daysA").value=state.config.diasA;$("daysB").value=state.config.diasB;$("daysC").value=state.config.diasC;$("period").value=state.config.periodoVenda;state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
-$("clearBtn").onclick=async()=>{if(!confirm("Apagar os produtos processados deste aparelho?"))return;state.products=[];state.manualOrders={};state.diagnostics=null;try{const db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction("data","readwrite");tx.objectStore("data").clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}catch(e){}$("diagnostics").innerHTML="";$("rows").innerHTML='<tr><td colspan="12">Importe o ERP para começar.</td></tr>';$("suggestions").classList.add("hidden");state.page=0;render();notice("Dados processados limpos. As bases incorporadas permanecem disponíveis.","ok")};
+$("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);$("daysA").value=state.config.diasA;$("daysB").value=state.config.diasB;$("daysC").value=state.config.diasC;$("period").value=state.config.periodoVenda;state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
+$("clearBtn").onclick=async()=>{if(!confirm("Apagar os produtos processados deste aparelho?"))return;state.products=[];state.manualOrders={};state.diagnostics=null;state.colunasERP=new Set();try{const db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction("data","readwrite");tx.objectStore("data").clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}catch(e){}$("diagnostics").innerHTML="";$("rows").innerHTML='<tr><td colspan="13">Importe o ERP para começar.</td></tr>';$("suggestions").classList.add("hidden");state.page=0;render();notice("Dados processados limpos. As bases incorporadas permanecem disponíveis.","ok")};
 async function start(){try{const base=await decompressBase();state.mix=base.mix;notice(`Bases internas carregadas: MIX ${fmt.format(state.mix.length)}. Aplicação pronta para importar ERP. Nenhum dado anterior foi restaurado.`,"ok");if("indexedDB" in window){const req=indexedDB.deleteDatabase(DB);req.onerror=()=>console.warn("Não foi possível limpar o armazenamento local antigo.");req.onblocked=()=>console.warn("Feche outras abas da aplicação para concluir a limpeza do armazenamento antigo.")}}catch(e){notice("Falha ao carregar as bases incorporadas: "+e.message,"error")}}
 // Move keyboard and visual focus to the result once the existing action renders it.
 $("suggestBtn").addEventListener("click", () => $("suggestionsTitle").focus());

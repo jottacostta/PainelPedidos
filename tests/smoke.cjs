@@ -193,8 +193,8 @@ async function checkERPBoxSize(page) {
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
   assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
   assert.deepEqual(rows.map(row => row[9]), ['7', '2', '—', '—']);
-  assert.match(rows[2][11], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
-  assert.match(rows[3][11], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
+  assert.match(rows[2][12], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
+  assert.match(rows[3][12], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
 }
 
 async function checkDynamicABC(page) {
@@ -280,7 +280,7 @@ async function checkInferredFolders(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 5'));
 
   const rows = await page.locator('#rows tr').evaluateAll(items =>
-    items.map(row => [row.cells[6].textContent, row.cells[11].textContent]));
+    items.map(row => [row.cells[6].textContent, row.cells[12].textContent]));
   assert.deepEqual(rows.map(row => row[0]), ['LIMPEZA', 'LIMPEZA', '', 'LIMPEZA', 'BEBIDAS']);
   assert.match(rows[0][1], /SEM CADASTRO MIX.*PASTA CLASSIFICADA POR SEMELHANÇA/);
   assert.match(rows[1][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
@@ -342,6 +342,92 @@ async function checkScopedABC(page) {
   assert.deepEqual(await hosts(), ['501']);
 }
 
+async function checkERPFields(page) {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
+  const codes = ['701', '702', '703', '704'];
+  await page.locator('#baseFile').setInputFiles({
+    name: 'bases-campos.json', mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ mix: codes.map(codigo => ({ codigo, pasta: 'LIMPEZA', fornecedor: 'ALFA', valorCaixa: 100, pallet: 10 })) })),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
+  // Colunas novas fora da ordem antiga: a leitura é pelo nome do cabeçalho.
+  const report = [
+    'Ordem\tChave\tDescricao\tValor Venda\tQtde Venda\tCusto Venda\tEstoque (Un)\tEstoque a Custo Com Icms\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)',
+    '\tTotal\tTotal\t0\t0\t0\t0\t0\t00 x 001,0 + 000\t00 x 001,0 + 000\t00 x 001,0 + 000',
+    '',
+    // 701: muitas caixas, pouco faturamento. 702: poucas caixas, muito faturamento.
+    ['1', '701', 'CAIXAS', '300,00', '3000', '240,00', '0', '50,50', '02 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
+    ['2', '702', 'FATURAMENTO', '9.000,00', '300', '6.000,00', '0', '100,00', '00 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
+    ['3', '703', 'MARGEM NEGATIVA', '100,00', '300', '150,00', '0', '0', '00 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
+    ['4', '704', 'SEM CD', '50,00', '300', '40,00', '0', '0', '00 x 010,0 + 000', '00 x 010,0 + 000', '-*-'].join('\t'),
+  ].join('\r\n');
+  await page.locator('#erpFile').setInputFiles({ name: 'campos.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report, 'latin1') });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
+  await page.locator('#hideZero').uncheck();
+  const row = async host => page.locator('#rows tr').filter({ has: page.locator('td:first-child', { hasText: new RegExp('^' + host + '$') }) });
+  const cells = async host => (await row(host)).locator('td').allTextContents();
+  const field = id => page.locator(`#erpFields input[data-campo="${id}"]`);
+
+  // Todos marcados: ABC por faturamento, valor pelo custo, margem e estoque a custo.
+  for (const id of ['f001', 'f003', 'f052', 'f153', 'f154', 'f164']) assert.equal(await field(id).isChecked(), true);
+  for (const id of ['f002', 'f049']) { assert.equal(await field(id).isChecked(), true); assert.equal(await field(id).isDisabled(), true); }
+  assert.equal((await cells('702'))[8], 'A');
+  assert.equal((await cells('701'))[8], 'C');
+  assert.equal((await cells('702'))[11], '33,3%');
+  assert.equal((await cells('703'))[11], '-50,0%');
+  assert.match((await cells('703'))[12], /MARGEM NEGATIVA/);
+  assert.match(await page.locator('#kStockCost').innerText(), /^R\$\s150,50$/);
+  assert.match(await page.locator('#abcRuleText').innerText(), /faturamento/);
+  // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → 158.
+  assert.equal((await cells('701'))[9], '158');
+  // 704 sem estoque no CD: RUPTURA CD com pedido 0.
+  assert.deepEqual((await cells('704')).slice(5, 6), ['RUPTURA CD']);
+  assert.equal((await cells('704'))[9], '0');
+  // Valor pelo custo: 701 custo 240 ÷ 300 cx vendidas = 0,80/cx; 158 cx = R$ 126,40.
+  const valorComCusto = await page.locator('#kValue').innerText();
+
+  // 001 desmarcado: ABC volta a caixas vendidas e a margem some.
+  await field('f001').uncheck();
+  assert.equal((await cells('701'))[8], 'A');
+  assert.equal((await cells('702'))[11], '—');
+  assert.match(await page.locator('#abcRuleText').innerText(), /caixas vendidas/);
+  await field('f001').check();
+  assert.equal((await cells('702'))[8], 'A');
+
+  // 003 desmarcado: valor do pedido volta ao valor da caixa do MIX.
+  await field('f003').uncheck();
+  assert.notEqual(await page.locator('#kValue').innerText(), valorComCusto);
+  assert.equal((await cells('702'))[11], '—');
+  await field('f003').check();
+  assert.equal(await page.locator('#kValue').innerText(), valorComCusto);
+
+  // 153 desmarcado: pendência zerada no cálculo e no acompanhamento.
+  await field('f153').uncheck();
+  assert.equal((await cells('701'))[9], '160');
+  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 0 itens / 0 caixas');
+  await field('f153').check();
+  assert.equal((await cells('701'))[9], '158');
+
+  // 164 desmarcado: regra RUPTURA CD desligada.
+  await field('f164').uncheck();
+  assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
+  assert.equal((await cells('704'))[9], '16');
+  await field('f164').check();
+  assert.equal((await cells('704'))[9], '0');
+
+  // 052 desmarcado: indicador sem valor.
+  await field('f052').uncheck();
+  assert.equal(await page.locator('#kStockCost').innerText(), '—');
+  await field('f052').check();
+
+  // ERP antigo (sem 001, 003 e 052): campos aparecem como não encontrados e o cálculo segue por caixas.
+  await page.locator('#erpFile').setInputFiles(path.join(__dirname, 'fixture-erp.xls'));
+  await page.waitForFunction(() => /ERP importado: 3/.test(document.querySelector('#notice').textContent));
+  assert.match(await page.locator('label.erp-field', { has: page.locator('input[data-campo="f001"]') }).innerText(), /não encontrado no último ERP/);
+  assert.equal(await page.locator('#kStockCost').innerText(), '—');
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -384,11 +470,11 @@ async function checkViewport(browser, width) {
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
     assert.deepEqual(await page.locator('#products th').allTextContents(), [
       'HOST', 'DESCRIÇÃO', 'VENDA', 'ESTOQUE UN', 'CD CX', 'SITUAÇÃO',
-      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'ALERTAS',
+      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'MARGEM', 'ALERTAS',
     ]);
     const firstProduct = page.locator('#rows tr').first();
     const cells = await firstProduct.locator('td').allTextContents();
-    assert.equal(cells.length, 12);
+    assert.equal(cells.length, 13);
     assert.equal(cells[0], '384667');
     assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
     assert.equal(cells[9], '0');
@@ -423,6 +509,7 @@ async function checkViewport(browser, width) {
       await checkInferredFolders(page);
       await checkScopedABC(page);
       await checkBackupAndLogistics(page);
+      await checkERPFields(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');
