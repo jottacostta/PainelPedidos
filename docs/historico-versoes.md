@@ -14,6 +14,7 @@
 | [#12](https://github.com/jottacostta/PainelPedidos/pull/12) e [#14](https://github.com/jottacostta/PainelPedidos/pull/14) | Detalhamento de pedidos negativos e estimativa de dias de venda do excedente. |
 | [#13](https://github.com/jottacostta/PainelPedidos/pull/13) | Classificação de pastas por semelhança com o MIX. |
 | [#17](https://github.com/jottacostta/PainelPedidos/pull/17) | Exposição e pulmão calculados pela venda média diária × 2, em substituição à consulta à base PART GON. |
+| [#22](https://github.com/jottacostta/PainelPedidos/pull/22) | Campos do ERP ESTATÍSTICA (001, 003, 052, 153, 154, 164) com caixas de marcar: curva ABC por faturamento, valor pelo custo, margem e indicador de estoque a custo. |
 
 ## Versões anteriores
 
