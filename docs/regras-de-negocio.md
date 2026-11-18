@@ -15,7 +15,7 @@ O painel **Campos do ERP ESTATÍSTICA** lista os campos do relatório com uma ca
 | 002 · Quantidade Vendida em Unidade | Obrigatório. | — |
 | 003 · Custo Venda | Valor da caixa = custo da venda ÷ caixas vendidas. Com o 001, calcula a margem. | Valor da caixa do MIX. Sem margem. |
 | 049 · Estoque em Unidade | Obrigatório. | — |
-| 052 · Estoque a Custo com ICMS | Indicador **Estoque a custo** com a soma dos produtos exibidos. | Indicador sem valor. |
+| 052 · Estoque a Custo com ICMS | Indicador **Estoque a custo** com a soma dos produtos exibidos, incluindo estoques negativos, como no total do ERP. | Indicador sem valor. |
 | 153 · Pedidos Pendentes (CX) | Pendências descontadas do pedido. | Pendência considerada zero no pedido, no filtro DIRETO e no acompanhamento. |
 | 154 · Estoque em Trânsito (CX) | Trânsito descontado do pedido. | Trânsito considerado zero no pedido e no acompanhamento. |
 | 164 · Estoque Depósito (CX) | Regra RUPTURA CD e filtros que exigem estoque no CD. | Regra RUPTURA CD desligada. Filtros de pasta e CDS deixam de exigir estoque no CD. |

@@ -353,14 +353,15 @@ async function checkERPFields(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
   // Colunas novas fora da ordem antiga: a leitura é pelo nome do cabeçalho.
   const report = [
-    'Ordem\tChave\tDescricao\tValor Venda\tQtde Venda\tCusto Venda\tEstoque (Un)\tEstoque a Custo Com Icms\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)',
-    '\tTotal\tTotal\t0\t0\t0\t0\t0\t00 x 001,0 + 000\t00 x 001,0 + 000\t00 x 001,0 + 000',
+    // Cabeçalho exatamente como o ERP ESTATÍSTICA exporta (arquivo real de 18/11/2026), com colunas vazias no fim.
+    'Ordem\tChave\tDescrição\tValor Venda\tQtde Venda\tCusto\tEstoque (Un)\tEst. Custo C/ICM\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)\t \t',
+    ' \tTotal\tTotal\t0\t0\t0\t0\t0\t00 x 001,0 + 000\t00 x 001,0 + 000\t00 x 001,0 + 000\t',
     '',
     // 701: muitas caixas, pouco faturamento. 702: poucas caixas, muito faturamento.
     ['1', '701', 'CAIXAS', '300,00', '3000', '240,00', '0', '50,50', '02 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
     ['2', '702', 'FATURAMENTO', '9.000,00', '300', '6.000,00', '0', '100,00', '00 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
     ['3', '703', 'MARGEM NEGATIVA', '100,00', '300', '150,00', '0', '0', '00 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
-    ['4', '704', 'SEM CD', '50,00', '300', '40,00', '0', '0', '00 x 010,0 + 000', '00 x 010,0 + 000', '-*-'].join('\t'),
+    ['4', '704', 'SEM CD', '50,00', '300', '40,00', '0', '-0,50', '00 x 010,0 + 000', '00 x 010,0 + 000', '-*-'].join('\t'),
   ].join('\r\n');
   await page.locator('#erpFile').setInputFiles({ name: 'campos.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report, 'latin1') });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
@@ -377,7 +378,7 @@ async function checkERPFields(page) {
   assert.equal((await cells('702'))[11], '33,3%');
   assert.equal((await cells('703'))[11], '-50,0%');
   assert.match((await cells('703'))[12], /MARGEM NEGATIVA/);
-  assert.match(await page.locator('#kStockCost').innerText(), /^R\$\s150,50$/);
+  assert.match(await page.locator('#kStockCost').innerText(), /^R\$\s150,00$/);
   assert.match(await page.locator('#abcRuleText').innerText(), /faturamento/);
   // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → 158.
   assert.equal((await cells('701'))[9], '158');
