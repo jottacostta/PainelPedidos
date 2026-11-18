@@ -372,7 +372,8 @@ async function checkERPFields(page) {
   const field = id => page.locator(`#erpFields input[data-campo="${id}"]`);
 
   // Todos marcados: ABC por faturamento, valor pelo custo, margem e estoque a custo.
-  for (const id of ['f001', 'f003', 'f052', 'f153', 'f154', 'f164', 'f164x']) assert.equal(await field(id).isChecked(), true);
+  for (const id of ['f001', 'f003', 'f052', 'f153', 'f154', 'f164']) assert.equal(await field(id).isChecked(), true);
+  assert.equal(await field('f164x').isChecked(), false);
   for (const id of ['f002', 'f049']) { assert.equal(await field(id).isChecked(), true); assert.equal(await field(id).isDisabled(), true); }
   assert.equal((await cells('702'))[8], 'A');
   assert.equal((await cells('701'))[8], 'C');
@@ -383,17 +384,21 @@ async function checkERPFields(page) {
   assert.match(await page.locator('#abcRuleText').innerText(), /faturamento/);
   // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → 158.
   assert.equal((await cells('701'))[9], '158');
-  // 705 com CD zerado: RUPTURA CD com pedido 0. 704 com -*- no CD: fora da ruptura por padrão.
+  // CD zerado (705) e -*- no CD (704): por padrão, os dois são RUPTURA CD com pedido 0.
   assert.equal((await cells('705'))[5], 'RUPTURA CD');
   assert.equal((await cells('705'))[9], '0');
-  assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
-  assert.equal((await cells('704'))[9], '16');
-  // Caixa -*- desmarcada: 704 volta a ser RUPTURA CD.
-  await field('f164x').uncheck();
+  assert.equal((await cells('705'))[4], '0');
   assert.equal((await cells('704'))[5], 'RUPTURA CD');
   assert.equal((await cells('704'))[9], '0');
+  // A coluna CD CX mostra -*- para diferenciar do CD zerado.
+  assert.equal((await cells('704'))[4], '-*-');
+  // Caixa -*- marcada: 704 sai da ruptura e volta a ter pedido; 705 continua em ruptura.
   await field('f164x').check();
+  assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
   assert.equal((await cells('704'))[9], '16');
+  assert.equal((await cells('705'))[9], '0');
+  await field('f164x').uncheck();
+  assert.equal((await cells('704'))[9], '0');
   // Valor pelo custo: 701 custo 240 ÷ 300 cx vendidas = 0,80/cx; 158 cx = R$ 126,40.
   const valorComCusto = await page.locator('#kValue').innerText();
 
