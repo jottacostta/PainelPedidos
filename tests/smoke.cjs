@@ -440,6 +440,20 @@ async function checkERPFields(page) {
   assert.equal(await page.locator('#kStockCost').innerText(), '—');
 }
 
+async function checkOfflineDownload(page) {
+  const mark = page.locator('#offlineDownload');
+  assert.equal(await mark.innerText(), 'G');
+  assert.equal(await mark.getAttribute('download'), 'PainelPedidos-offline.html');
+  const [download] = await Promise.all([page.waitForEvent('download'), mark.click()]);
+  assert.equal(download.suggestedFilename(), 'PainelPedidos-offline.html');
+  const file = await download.path();
+  const html = require('fs').readFileSync(file, 'utf8');
+  assert(html.length > 1_000_000, 'cópia offline deve trazer as bases embutidas');
+  assert.match(html, /id="embedded-base"/);
+  assert.match(html, /<title>Painel de pedidos/);
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Versão offline baixada'));
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -522,6 +536,7 @@ async function checkViewport(browser, width) {
       await checkScopedABC(page);
       await checkBackupAndLogistics(page);
       await checkERPFields(page);
+      await checkOfflineDownload(page);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');

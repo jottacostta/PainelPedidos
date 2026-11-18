@@ -70,6 +70,9 @@ h3 { font-size: 15px; }
   border-radius: 12px; background: var(--brand); color: var(--yellow);
   font-weight: 850; font-size: 22px;
 }
+a.brand-mark { text-decoration: none; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+a.brand-mark:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 57, 48, .25); }
+a.brand-mark:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
 .company { display: block; font-size: 15px; font-weight: 750; line-height: 1.22; }
 .business { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
 .top-nav { display: flex; gap: 24px; font-weight: 650; color: var(--brand); }
@@ -307,7 +310,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <header class="topbar">
   <div class="topbar-inner">
     <div class="identity">
-      <span class="brand-mark" aria-hidden="true">G</span>
+      <a class="brand-mark" id="offlineDownload" href="index.html" download="PainelPedidos-offline.html" title="Baixar o painel para usar sem internet" aria-label="Baixar o painel para usar sem internet">G</a>
       <div><strong class="company">Guanabara</strong><span class="business">Reposição JBS · Operação local</span></div>
     </div>
     <nav class="top-nav" aria-label="Seções do painel">
@@ -475,6 +478,20 @@ function quantidadeCaixaERP(pendente, transito){
 }
 function boxes(v){const s=String(v??"").trim();if(!s||s==="-*-" )return 0;const m=s.match(formatoCaixasERP);if(m){const n=Number(m[1].replace(/\./g,""));return Number.isFinite(n)?n:0}const lead=s.match(/^\s*([\d.]+)/);if(lead){const n=Number(lead[1].replace(/\./g,""));return Number.isFinite(n)?n:0}return num(s)}
 function notice(msg,type=""){const n=$("notice");n.className="notice "+type;n.textContent=msg}
+// "G" do cabeçalho: baixa uma cópia completa do painel (HTML único com as bases) para usar sem internet.
+async function baixarVersaoOffline(e){
+ e.preventDefault();
+ if(location.protocol==="file:"){notice("Você já está usando a versão offline deste painel.","ok");return}
+ try{
+  notice("Preparando a versão offline…");
+  const r=await fetch(location.href.split("#")[0],{cache:"no-store"});
+  if(!r.ok)throw Error("HTTP "+r.status);
+  const url=URL.createObjectURL(new Blob([await r.arrayBuffer()],{type:"text/html"}));
+  const a=document.createElement("a");a.href=url;a.download="PainelPedidos-offline.html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  notice("Versão offline baixada: abra o arquivo PainelPedidos-offline.html no navegador, mesmo sem internet.","ok");
+ }catch(err){notice("Não foi possível baixar a versão offline ("+err.message+"). Abra o painel no navegador padrão do aparelho e tente de novo.","bad")}
+}
 async function decompressBase(){
  const b64=$("embedded-base").textContent.trim();const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
  if(!("DecompressionStream" in window))throw Error("Este Chrome não oferece descompressão gzip. Atualize o Chrome para carregar as bases internas.");
@@ -701,6 +718,7 @@ function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"],["VALOR_VENDA","valorVendaERP"],["CUSTO_VENDA","custoVendaERP"],["MARGEM","margemVenda"],["ESTOQUE_CUSTO","estoqueCustoERP"],["ORIGEM_VALOR_CAIXA","origemValorCaixa"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):c[1]==="pendenteCaixa"?pendenteUsado(p):c[1]==="transitoCaixa"?transitoUsado(p):c[1]==="margemVenda"?(p.margemVenda==null?"":pct(p.margemVenda)):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
 function download(blob,name){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;limparSugestoes();render()}));
+$("offlineDownload").addEventListener("click",baixarVersaoOffline);
 $("erpFields").addEventListener("change",e=>{const c=e.target.closest("input[data-campo]");if(!c)return;const campo=CAMPOS_ERP.find(x=>x.id===c.dataset.campo);if(!campo||campo.fixo||(campo.depende&&!campoMarcado(campo.depende)))return;state.config={...state.config,campos:{...state.config.campos,[campo.id]:c.checked}};recalcularCampos();notice(`Campo ${campo.seq} · ${campo.nome} ${c.checked?"marcado":"desmarcado"}. Produtos recalculados.`,"ok")});
 $("logisticsPrev").addEventListener("click",()=>{if(logisticsPage>0){logisticsPage--;renderLogistics()}});
 $("logisticsNext").addEventListener("click",()=>{logisticsPage++;renderLogistics()});
