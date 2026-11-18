@@ -235,7 +235,24 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 .edit-modal h3 { margin-bottom: 8px; }
 .edit-modal p { margin: 8px 0; color: var(--muted); }
 .edit-modal input { width: 100%; margin-top: 5px; }
+.calc { margin-top: 12px; padding: 10px; border: 1px solid var(--line, #dbe7e1); border-radius: 12px; background: #f6faf8; }
+.calc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.calc-chips button { min-height: 32px; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; color: var(--brand); background: var(--white); border: 1px solid #c4d6ce; }
+.calc-chips button b { font-variant-numeric: tabular-nums; }
+.calc-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-height: 44px; padding: 8px 11px; border-radius: 8px; background: var(--white); border: 1px solid #c4d6ce; font-variant-numeric: tabular-nums; }
+.calc-display span { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 14px; }
+.calc-display b { flex: none; font-size: 19px; color: var(--ink); }
+.calc-display.is-error b { color: var(--red); font-size: 14px; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.calc-keys button { min-height: 44px; padding: 0; justify-content: center; font-size: 17px; font-weight: 650; background: var(--white); }
+.calc-keys .calc-op { color: var(--brand); background: #e7f2ec; }
+.calc-keys .calc-clear { color: #8a3b3e; background: #fbeeee; }
+.calc-keys .calc-eq { color: var(--white); background: var(--brand); border-color: var(--brand); }
+.calc-use { width: 100%; justify-content: center; margin-top: 8px; min-height: 44px; color: var(--brand); background: #fff7d1; border-color: #e1c25c; font-weight: 700; }
 .edit-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+/* Com a calculadora, Cancelar e Aplicar ficam sempre visíveis no rodapé da janela. */
+.edit-modal-actions { position: sticky; bottom: -23px; margin: 14px -23px -23px; padding: 12px 23px 23px; background: var(--white); border-top: 1px solid #e3ece8; }
+@media (max-width: 650px) { .calc-keys button { min-height: 44px; font-size: 16px; } .calc-keys { gap: 5px; } .edit-modal { padding: 18px; } .edit-modal-actions { bottom: -18px; margin: 12px -18px -18px; padding: 10px 18px 18px; } }
 
 @media (max-width: 900px) {
   main, .topbar-inner { padding-inline: 20px; }
@@ -431,6 +448,12 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   <p id="manualEditProduct"></p>
   <label for="manualEditValue">Nova quantidade (caixas)</label>
   <input id="manualEditValue" type="number" step="1" min="0" inputmode="numeric">
+  <div class="calc" id="manualCalc" role="group" aria-label="Calculadora do pedido">
+   <div class="calc-chips" id="calcChips" aria-label="Valores do produto"></div>
+   <div class="calc-display" aria-live="polite"><span id="calcExpr">0</span><b id="calcResult">= 0</b></div>
+   <div class="calc-keys"><button type="button" data-calc="C" class="calc-clear" aria-label="Limpar">C</button><button type="button" data-calc="⌫" class="calc-clear" aria-label="Apagar">⌫</button><button type="button" data-calc="(" class="calc-op">(</button><button type="button" data-calc=")" class="calc-op">)</button><button type="button" data-calc="7">7</button><button type="button" data-calc="8">8</button><button type="button" data-calc="9">9</button><button type="button" data-calc="÷" class="calc-op" aria-label="Dividir">÷</button><button type="button" data-calc="4">4</button><button type="button" data-calc="5">5</button><button type="button" data-calc="6">6</button><button type="button" data-calc="×" class="calc-op" aria-label="Multiplicar">×</button><button type="button" data-calc="1">1</button><button type="button" data-calc="2">2</button><button type="button" data-calc="3">3</button><button type="button" data-calc="−" class="calc-op" aria-label="Subtrair">−</button><button type="button" data-calc="0">0</button><button type="button" data-calc="," aria-label="Vírgula">,</button><button type="button" data-calc="=" class="calc-eq" aria-label="Calcular">=</button><button type="button" data-calc="+" class="calc-op" aria-label="Somar">+</button></div>
+   <button type="button" class="calc-use" id="calcUse">Usar resultado no pedido</button>
+  </div>
   <p>Gere as sugestões para incluir este ajuste no pedido impresso.</p>
   <div class="edit-modal-actions"><button type="button" id="cancelManualEdit">Cancelar</button><button type="button" class="good" id="saveManualEdit">Aplicar</button></div>
  </div>
@@ -733,7 +756,47 @@ $("ruptureKpi").onclick=toggleRuptureFilter;
 $("ruptureKpi").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleRuptureFilter()}};
 $("prev").onclick=()=>{state.page=Math.max(0,state.page-1);render()};$("next").onclick=()=>{state.page++;render()};
 $("applyParams").onclick=async()=>{state.config={...state.config,diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);limparSugestoes();render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
-$("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
+$("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||semEstoqueCD(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;abrirCalc(p);$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
+// Calculadora do pedido: avalia + − × ÷ e parênteses sem eval; vírgula é o separador decimal.
+const calc$={expr:""};
+const fmtCalc=v=>Number.isFinite(v)?v.toLocaleString("pt-BR",{maximumFractionDigits:2}):"—";
+function avaliarConta(expr){
+ const t=expr.replace(/\s/g,"").replace(/,/g,".").match(/\d+(?:\.\d+)?|\.\d+|[+\-−×÷*/()]/g)||[];
+ if(t.join("")!==expr.replace(/\s/g,"").replace(/,/g,"."))throw Error("conta inválida");
+ let i=0;const ver=()=>t[i],tomar=()=>t[i++];
+ const fator=()=>{const k=tomar();if(k==="(")return(()=>{const v=soma();if(tomar()!==")")throw Error("parêntese aberto");return v})();if(k==="−"||k==="-")return -fator();if(k==="+")return fator();const n=Number(k);if(k==null||!Number.isFinite(n))throw Error("conta incompleta");return n};
+ const termo=()=>{let v=fator();while(["×","÷","*","/"].includes(ver())){const op=tomar(),d=fator();if((op==="÷"||op==="/")&&d===0)throw Error("divisão por zero");v=op==="×"||op==="*"?v*d:v/d}return v};
+ const soma=()=>{let v=termo();while(["+","−","-"].includes(ver())){const op=tomar();v=op==="+"?v+termo():v-termo()}return v};
+ if(!t.length)return 0;const v=soma();if(i<t.length)throw Error("conta inválida");return v;
+}
+function resultadoConta(){try{return{v:avaliarConta(calc$.expr)}}catch(e){return{erro:e.message}}}
+function renderCalc(){
+ const r=resultadoConta(),box=document.querySelector(".calc-display");
+ $("calcExpr").textContent=calc$.expr||"0";
+ box.classList.toggle("is-error",!!r.erro&&calc$.expr!=="");
+ $("calcResult").textContent=r.erro?(calc$.expr?r.erro:"= 0"):`= ${fmtCalc(r.v)}`;
+ const caixas=r.erro||!calc$.expr?null:Math.max(0,Math.ceil(r.v-1e-9));
+ $("calcUse").textContent=caixas==null?"Usar resultado no pedido":`Usar ${fmtCalc(caixas)} cx no pedido${r.v!==caixas?" (arredondado para cima)":""}`;
+ $("calcUse").disabled=caixas==null;
+}
+function teclaCalc(k){
+ if(k==="C")calc$.expr="";
+ else if(k==="⌫")calc$.expr=calc$.expr.slice(0,-1);
+ else if(k==="="){const r=resultadoConta();if(!r.erro)calc$.expr=fmtCalc(r.v).replace(/\./g,"")}
+ else calc$.expr+=k;
+ renderCalc();
+}
+function abrirCalc(p){
+ calc$.expr="";
+ const cx=num(p.quantidadeCaixa),period=Math.max(1,state.config.periodoVenda),valid=cx>0;
+ const chips=[["Sugestão",p.pedidoSugestao,"cx"]];
+ if(valid){chips.push(["Venda/dia",num(p.vendaUnidade)/cx/period,"cx"],["Estoque",num(p.estoqueLojaUnidade)/cx,"cx"]);const pt=pendenteUsado(p)+transitoUsado(p);if(pt)chips.push(["Pend.+trâns.",pt,"cx"])}
+ const n=v=>String(Math.round(v*100)/100).replace(".",",");
+ $("calcChips").innerHTML=chips.map(([r,v,u])=>`<button type="button" data-calc-insert="${n(v)}" title="Inserir na conta">${r} <b>${fmtCalc(Math.round(v*100)/100)}</b> ${u}</button>`).join("")+(valid&&cx!==1?`<button type="button" data-calc-insert="÷${n(cx)}" title="Converter unidades em caixas">÷ ${fmtCalc(cx)} un/cx</button>`:"");
+ renderCalc();
+}
+$("manualCalc").addEventListener("click",e=>{const k=e.target.closest("[data-calc]");if(k){teclaCalc(k.dataset.calc);return}const ins=e.target.closest("[data-calc-insert]");if(ins){calc$.expr+=ins.dataset.calcInsert;renderCalc()}});
+$("calcUse").onclick=()=>{const r=resultadoConta();if(r.erro||!calc$.expr)return;$("manualEditValue").value=Math.max(0,Math.ceil(r.v-1e-9));$("manualEditValue").focus()};
 function closeManualEdit(){$("manualEditModal").classList.remove("open");state.editingCode=null}
 $("cancelManualEdit").onclick=closeManualEdit;
 $("manualEditModal").addEventListener("click",e=>{if(e.target.id==="manualEditModal")closeManualEdit()});
