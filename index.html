@@ -219,6 +219,7 @@ tbody tr.rupture-row:hover { background: var(--red-light); }
 .erp-field input:disabled { cursor: not-allowed; }
 .erp-field small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
 .erp-field.is-missing { opacity: .6; }
+.erp-field.is-sub { grid-column: 1/-1; padding-left: 24px; }
 .diag { background: var(--canvas); border-radius: 8px; padding: 9px; font-size: 12px; overflow-wrap: anywhere; }
 .diag b { display: block; font-size: 15px; }
 .support-content p { margin-bottom: 10px; }
@@ -451,6 +452,8 @@ const CAMPOS_ERP=[
  {id:"f153",seq:"153",nome:"Pedidos Pendentes (CX)",uso:"Desconta pendências do pedido",chave:"pendenteCaixa"},
  {id:"f154",seq:"154",nome:"Estoque em Trânsito (CX)",uso:"Desconta trânsito do pedido",chave:"transitoCaixa"},
  {id:"f164",seq:"164",nome:"Estoque Depósito (CX)",uso:"Regra RUPTURA CD e filtros pelo CD",chave:"estoqueCDCaixa"},
+ // "-*-" no depósito indica item que não passa pelo CD. Marcado: fica fora da RUPTURA CD.
+ {id:"f164x",seq:"164",nome:"Itens com -*- no CD fora da RUPTURA CD",uso:"Desmarcado: -*- conta como CD zerado e gera RUPTURA CD",chave:"estoqueCDCaixa",depende:"f164"},
 ];
 function camposPadrao(){return Object.fromEntries(CAMPOS_ERP.map(c=>[c.id,true]))}
 const fmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2});
@@ -490,7 +493,7 @@ function colunasDosProdutos(products){
  return new Set(CAMPOS_ERP.filter(c=>c.fixo||products.some(p=>p[c.chave]!=null)).map(c=>c.id));
 }
 function campoMarcado(id){return CAMPOS_ERP.find(c=>c.id===id)?.fixo||state.config.campos?.[id]!==false}
-function campoAtivo(id){return campoMarcado(id)&&state.colunasERP.has(id)}
+function campoAtivo(id){const c=CAMPOS_ERP.find(x=>x.id===id);return campoMarcado(id)&&state.colunasERP.has(id)&&(!c?.depende||campoAtivo(c.depende))}
 function pendenteUsado(p){return campoAtivo("f153")?num(p.pendenteCaixa):0}
 function transitoUsado(p){return campoAtivo("f154")?num(p.transitoCaixa):0}
 function abcPorFaturamento(){return campoAtivo("f001")}
@@ -600,8 +603,8 @@ function mapearColunasERP(cabecalho){
  if(faltando.length)throw Error("Cabeçalho ERP ESTATÍSTICA não reconhecido. Faltam: "+faltando.join(", ")+".");
  return pos;
 }
-function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new TextDecoder("windows-1252").decode(buf),lines=text.replace(/^﻿/,"").split(/\r?\n/);if(lines.length<4)throw Error("ERP incompleto: esperado cabeçalho, totais, linha vazia e produtos.");const pos=mapearColunasERP(lines[0].split("\t"));const cel=(c,k)=>pos[k]<0?undefined:c[pos[k]];const valor=(c,k)=>pos[k]<0?null:num(c[pos[k]]);const minimo=Math.max(...Object.values(pos))+1;const out=[];for(let i=3;i<lines.length;i++){const l=lines[i];if(!l.trim())continue;const c=l.split("\t");if(c.length<minimo)continue;const codigo=code(cel(c,"chave"));if(!codigo)continue;out.push({codigo,descricao:String(cel(c,"descricao")??"").trim(),vendaUnidade:num(cel(c,"venda")),estoqueLojaUnidade:num(cel(c,"estoque")),pendenteCaixa:pos.pendente<0?null:boxes(cel(c,"pendente")),transitoCaixa:pos.transito<0?null:boxes(cel(c,"transito")),estoqueCDCaixa:pos.cd<0?null:boxes(cel(c,"cd")),valorVendaERP:valor(c,"valorVenda"),custoVendaERP:valor(c,"custoVenda"),estoqueCustoERP:valor(c,"estoqueCusto"),fornecedor:"",pasta:"",pallet:0,valorCaixa:0,...quantidadeCaixaERP(cel(c,"pendente"),cel(c,"transito"))})}return out})}
-function semEstoqueCD(p){return campoAtivo("f164")&&p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0}
+function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new TextDecoder("windows-1252").decode(buf),lines=text.replace(/^﻿/,"").split(/\r?\n/);if(lines.length<4)throw Error("ERP incompleto: esperado cabeçalho, totais, linha vazia e produtos.");const pos=mapearColunasERP(lines[0].split("\t"));const cel=(c,k)=>pos[k]<0?undefined:c[pos[k]];const valor=(c,k)=>pos[k]<0?null:num(c[pos[k]]);const minimo=Math.max(...Object.values(pos))+1;const out=[];for(let i=3;i<lines.length;i++){const l=lines[i];if(!l.trim())continue;const c=l.split("\t");if(c.length<minimo)continue;const codigo=code(cel(c,"chave"));if(!codigo)continue;out.push({codigo,descricao:String(cel(c,"descricao")??"").trim(),vendaUnidade:num(cel(c,"venda")),estoqueLojaUnidade:num(cel(c,"estoque")),pendenteCaixa:pos.pendente<0?null:boxes(cel(c,"pendente")),transitoCaixa:pos.transito<0?null:boxes(cel(c,"transito")),estoqueCDCaixa:pos.cd<0?null:boxes(cel(c,"cd")),cdNaoInformado:pos.cd>=0&&String(cel(c,"cd")??"").trim()==="-*-",valorVendaERP:valor(c,"valorVenda"),custoVendaERP:valor(c,"custoVenda"),estoqueCustoERP:valor(c,"estoqueCusto"),fornecedor:"",pasta:"",pallet:0,valorCaixa:0,...quantidadeCaixaERP(cel(c,"pendente"),cel(c,"transito"))})}return out})}
+function semEstoqueCD(p){return campoAtivo("f164")&&p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0&&!(p.cdNaoInformado&&campoAtivo("f164x"))}
 function emRuptura(p){return p.situacao==="FALTA"||p.situacao==="RUPTURA CD"}
 function pedidoFinalAtual(p){if(semEstoqueCD(p))return 0;return Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?state.manualOrders[p.codigo]:p.pedidoFinalArredondado}
 function alertasProduto(p){
@@ -683,9 +686,9 @@ function renderDiag(){const d=state.diagnostics;if(!d)return;const pct=(a)=>`${(
 function renderCampos(){
  const carregado=state.products.length>0;
  $("erpFields").innerHTML=CAMPOS_ERP.map(c=>{
-  const presente=state.colunasERP.has(c.id),marcado=campoMarcado(c.id);
-  const status=c.fixo?"obrigatório":!carregado?"aguardando ERP":!presente?"não encontrado no último ERP":marcado?"em uso":"desmarcado";
-  return `<label class="erp-field${carregado&&!presente?" is-missing":""}"><input type="checkbox" data-campo="${c.id}"${marcado?" checked":""}${c.fixo?" disabled":""}><span><b>${c.seq} · ${esc(c.nome)}</b><small>${esc(c.uso)} · ${status}</small></span></label>`;
+  const presente=state.colunasERP.has(c.id),marcado=campoMarcado(c.id),bloqueado=c.depende&&!campoMarcado(c.depende);
+  const status=c.fixo?"obrigatório":!carregado?"aguardando ERP":!presente?"não encontrado no último ERP":bloqueado?`depende do campo ${c.depende.slice(1)}`:marcado?"em uso":"desmarcado";
+  return `<label class="erp-field${carregado&&!presente||bloqueado?" is-missing":""}${c.depende?" is-sub":""}"><input type="checkbox" data-campo="${c.id}"${marcado?" checked":""}${c.fixo||bloqueado?" disabled":""}><span><b>${c.seq} · ${esc(c.nome)}</b><small>${esc(c.uso)} · ${status}</small></span></label>`;
  }).join("");
 }
 function recalcularCampos(){
@@ -698,7 +701,7 @@ function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"],["VALOR_VENDA","valorVendaERP"],["CUSTO_VENDA","custoVendaERP"],["MARGEM","margemVenda"],["ESTOQUE_CUSTO","estoqueCustoERP"],["ORIGEM_VALOR_CAIXA","origemValorCaixa"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):c[1]==="pendenteCaixa"?pendenteUsado(p):c[1]==="transitoCaixa"?transitoUsado(p):c[1]==="margemVenda"?(p.margemVenda==null?"":pct(p.margemVenda)):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
 function download(blob,name){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;limparSugestoes();render()}));
-$("erpFields").addEventListener("change",e=>{const c=e.target.closest("input[data-campo]");if(!c)return;const campo=CAMPOS_ERP.find(x=>x.id===c.dataset.campo);if(!campo||campo.fixo)return;state.config={...state.config,campos:{...state.config.campos,[campo.id]:c.checked}};recalcularCampos();notice(`Campo ${campo.seq} · ${campo.nome} ${c.checked?"marcado":"desmarcado"}. Produtos recalculados.`,"ok")});
+$("erpFields").addEventListener("change",e=>{const c=e.target.closest("input[data-campo]");if(!c)return;const campo=CAMPOS_ERP.find(x=>x.id===c.dataset.campo);if(!campo||campo.fixo||(campo.depende&&!campoMarcado(campo.depende)))return;state.config={...state.config,campos:{...state.config.campos,[campo.id]:c.checked}};recalcularCampos();notice(`Campo ${campo.seq} · ${campo.nome} ${c.checked?"marcado":"desmarcado"}. Produtos recalculados.`,"ok")});
 $("logisticsPrev").addEventListener("click",()=>{if(logisticsPage>0){logisticsPage--;renderLogistics()}});
 $("logisticsNext").addEventListener("click",()=>{logisticsPage++;renderLogistics()});
 const DB="JBS_REPOSICAO_OFFLINE_V1";

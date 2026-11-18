@@ -345,7 +345,7 @@ async function checkScopedABC(page) {
 async function checkERPFields(page) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
-  const codes = ['701', '702', '703', '704'];
+  const codes = ['701', '702', '703', '704', '705'];
   await page.locator('#baseFile').setInputFiles({
     name: 'bases-campos.json', mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify({ mix: codes.map(codigo => ({ codigo, pasta: 'LIMPEZA', fornecedor: 'ALFA', valorCaixa: 100, pallet: 10 })) })),
@@ -362,16 +362,17 @@ async function checkERPFields(page) {
     ['2', '702', 'FATURAMENTO', '9.000,00', '300', '6.000,00', '0', '100,00', '00 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
     ['3', '703', 'MARGEM NEGATIVA', '100,00', '300', '150,00', '0', '0', '00 x 010,0 + 000', '00 x 010,0 + 000', '20 x 001,0 + 000'].join('\t'),
     ['4', '704', 'SEM CD', '50,00', '300', '40,00', '0', '-0,50', '00 x 010,0 + 000', '00 x 010,0 + 000', '-*-'].join('\t'),
+    ['5', '705', 'CD ZERADO', '10,00', '300', '8,00', '0', '0', '00 x 010,0 + 000', '00 x 010,0 + 000', '00 x 001,0 + 000'].join('\t'),
   ].join('\r\n');
   await page.locator('#erpFile').setInputFiles({ name: 'campos.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report, 'latin1') });
-  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 5'));
   await page.locator('#hideZero').uncheck();
   const row = async host => page.locator('#rows tr').filter({ has: page.locator('td:first-child', { hasText: new RegExp('^' + host + '$') }) });
   const cells = async host => (await row(host)).locator('td').allTextContents();
   const field = id => page.locator(`#erpFields input[data-campo="${id}"]`);
 
   // Todos marcados: ABC por faturamento, valor pelo custo, margem e estoque a custo.
-  for (const id of ['f001', 'f003', 'f052', 'f153', 'f154', 'f164']) assert.equal(await field(id).isChecked(), true);
+  for (const id of ['f001', 'f003', 'f052', 'f153', 'f154', 'f164', 'f164x']) assert.equal(await field(id).isChecked(), true);
   for (const id of ['f002', 'f049']) { assert.equal(await field(id).isChecked(), true); assert.equal(await field(id).isDisabled(), true); }
   assert.equal((await cells('702'))[8], 'A');
   assert.equal((await cells('701'))[8], 'C');
@@ -382,9 +383,17 @@ async function checkERPFields(page) {
   assert.match(await page.locator('#abcRuleText').innerText(), /faturamento/);
   // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → 158.
   assert.equal((await cells('701'))[9], '158');
-  // 704 sem estoque no CD: RUPTURA CD com pedido 0.
-  assert.deepEqual((await cells('704')).slice(5, 6), ['RUPTURA CD']);
+  // 705 com CD zerado: RUPTURA CD com pedido 0. 704 com -*- no CD: fora da ruptura por padrão.
+  assert.equal((await cells('705'))[5], 'RUPTURA CD');
+  assert.equal((await cells('705'))[9], '0');
+  assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
+  assert.equal((await cells('704'))[9], '16');
+  // Caixa -*- desmarcada: 704 volta a ser RUPTURA CD.
+  await field('f164x').uncheck();
+  assert.equal((await cells('704'))[5], 'RUPTURA CD');
   assert.equal((await cells('704'))[9], '0');
+  await field('f164x').check();
+  assert.equal((await cells('704'))[9], '16');
   // Valor pelo custo: 701 custo 240 ÷ 300 cx vendidas = 0,80/cx; 158 cx = R$ 126,40.
   const valorComCusto = await page.locator('#kValue').innerText();
 
@@ -410,12 +419,14 @@ async function checkERPFields(page) {
   await field('f153').check();
   assert.equal((await cells('701'))[9], '158');
 
-  // 164 desmarcado: regra RUPTURA CD desligada.
+  // 164 desmarcado: regra RUPTURA CD desligada e a caixa -*- fica bloqueada.
   await field('f164').uncheck();
-  assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
-  assert.equal((await cells('704'))[9], '16');
+  assert.notEqual((await cells('705'))[5], 'RUPTURA CD');
+  assert.equal((await cells('705'))[9], '16');
+  assert.equal(await field('f164x').isDisabled(), true);
   await field('f164').check();
-  assert.equal((await cells('704'))[9], '0');
+  assert.equal((await cells('705'))[9], '0');
+  assert.equal(await field('f164x').isDisabled(), false);
 
   // 052 desmarcado: indicador sem valor.
   await field('f052').uncheck();
