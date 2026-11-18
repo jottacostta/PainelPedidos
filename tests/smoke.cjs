@@ -16,6 +16,51 @@ async function checkInvalidERP(page) {
   assert.equal(await page.locator('#erpFile').inputValue(), '');
 }
 
+async function checkManualCalculator(page) {
+  await page.locator('#baseFile').setInputFiles({
+    name: 'bases-calc.json', mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ mix: [{ codigo: '801', pasta: 'LIMPEZA', fornecedor: 'ALFA', valorCaixa: 10, pallet: 10 }] })),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
+  const report = [
+    'Ordem\tChave\tDescricao\tQtde Venda\tEstoque (Un)\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)',
+    '\tTotal\tTotal\t0\t0\t00 x 001,0 + 000\t00 x 001,0 + 000\t00 x 001,0 + 000', '',
+    ['1', '801', 'CALCULADORA', '360', '24', '00 x 012,0 + 000', '00 x 012,0 + 000', '30 x 001,0 + 000'].join('\t'),
+  ].join('\r\n');
+  await page.locator('#erpFile').setInputFiles({ name: 'calc.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report, 'latin1') });
+  await page.waitForFunction(() => /ERP importado: 1/.test(document.querySelector('#notice').textContent));
+  const edit = page.locator('#rows [data-edit-code="801"]');
+  await edit.click();
+  await page.waitForSelector('#manualEditModal.open');
+  assert.match(await page.locator('#calcChips').innerText(), /Sugestão/);
+  assert.match(await page.locator('#calcChips').innerText(), /÷ 12 un\/cx/);
+  assert.equal(await page.locator('#calcExpr').innerText(), '0');
+  assert.equal(await page.locator('#calcUse').isDisabled(), true);
+  const press = async keys => { for (const k of keys) await page.locator(`#manualCalc [data-calc="${k}"]`).click(); };
+  // (3 + 1) × 2 ÷ 3 = 2,67 → usa 3 caixas, arredondando para cima.
+  await press(['(', '3', '+', '1', ')', '×', '2', '÷', '3']);
+  assert.equal(await page.locator('#calcExpr').innerText(), '(3+1)×2÷3');
+  assert.equal(await page.locator('#calcResult').innerText(), '= 2,67');
+  assert.match(await page.locator('#calcUse').innerText(), /^Usar 3 cx no pedido \(arredondado para cima\)$/);
+  await page.locator('#calcUse').click();
+  assert.equal(await page.locator('#manualEditValue').inputValue(), '3');
+  // Erro de conta não quebra a janela e desativa o botão.
+  await press(['C', '7', '÷', '0']);
+  assert.equal(await page.locator('#calcResult').innerText(), 'divisão por zero');
+  assert.equal(await page.locator('#calcUse').isDisabled(), true);
+  await press(['⌫', '2', '=']);
+  assert.equal(await page.locator('#calcExpr').innerText(), '3,5');
+  // Valor do produto entra na conta pelo atalho.
+  await press(['C']);
+  await page.locator('#calcChips [data-calc-insert]').first().click();
+  assert.notEqual(await page.locator('#calcExpr').innerText(), '0');
+  // Aplicar grava o valor do campo, como antes.
+  await page.locator('#manualEditValue').fill('3');
+  await page.locator('#saveManualEdit').click();
+  assert(!(await page.locator('#manualEditModal').evaluate(el => el.classList.contains('open'))));
+  assert.equal((await edit.innerText()).split('\n')[0].trim(), '3');
+}
+
 async function checkBackupAndLogistics(page) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
@@ -529,6 +574,7 @@ async function checkViewport(browser, width) {
     await page.emulateMedia({ media: 'screen' });
     if (width === 1366) {
       await checkInvalidERP(page);
+      await checkManualCalculator(page);
       await checkRuptureCD(page);
       await checkERPBoxSize(page);
       await checkDynamicABC(page);
