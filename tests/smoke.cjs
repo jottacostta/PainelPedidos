@@ -437,10 +437,11 @@ async function checkERPFields(page) {
   assert.equal((await cells('704'))[9], '0');
   // A coluna CD CX mostra -*- para diferenciar do CD zerado.
   assert.equal((await cells('704'))[4], '-*-');
-  // Caixa -*- marcada: 704 sai da ruptura e volta a ter pedido; 705 continua em ruptura.
+  // Caixa -*- marcada: 704 sai da ruptura e mantém pedido zero; 705 continua em ruptura.
   await field('f164x').check();
   assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
-  assert.equal((await cells('704'))[9], '16');
+  assert.equal((await cells('704'))[9], '0');
+  assert.equal(await (await row('704')).locator('[data-edit-code]').count(), 0);
   assert.equal((await cells('705'))[9], '0');
   await field('f164x').uncheck();
   assert.equal((await cells('704'))[9], '0');
@@ -471,6 +472,7 @@ async function checkERPFields(page) {
 
   // 164 desmarcado: regra RUPTURA CD desligada e a caixa -*- fica bloqueada.
   await field('f164').uncheck();
+  assert.equal((await cells('704'))[9], '0');
   assert.notEqual((await cells('705'))[5], 'RUPTURA CD');
   assert.equal((await cells('705'))[9], '16');
   assert.equal(await field('f164x').isDisabled(), true);

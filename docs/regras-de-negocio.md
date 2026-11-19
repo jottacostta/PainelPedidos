@@ -19,7 +19,9 @@ O painel **Campos do ERP ESTATÍSTICA** lista os campos do relatório com uma ca
 | 153 · Pedidos Pendentes (CX) | Pendências descontadas do pedido. | Pendência considerada zero no pedido, no filtro DIRETO e no acompanhamento. |
 | 154 · Estoque em Trânsito (CX) | Trânsito descontado do pedido. | Trânsito considerado zero no pedido e no acompanhamento. |
 | 164 · Estoque Depósito (CX) | Regra RUPTURA CD e filtros que exigem estoque no CD. | Regra RUPTURA CD desligada. Filtros de pasta e CDS deixam de exigir estoque no CD. |
-| 164 · Itens com `-*-` no CD fora da RUPTURA CD (desmarcada por padrão) | O item com `-*-` segue o cálculo normal, sem RUPTURA CD. | `-*-` conta como CD zerado: RUPTURA CD e pedido 0. Fica bloqueada quando o 164 está desmarcado. |
+| 164 · Itens com `-*-` no CD fora da RUPTURA CD (desmarcada por padrão) | O item com `-*-` sai da situação RUPTURA CD e mantém o pedido final em 0. | `-*-` conta como CD zerado: RUPTURA CD e pedido 0. Fica bloqueada quando o 164 está desmarcado. |
+
+CD CX igual a `-*-` sempre bloqueia a edição e zera o pedido e a sugestão, inclusive com o campo 164 desmarcado.
 
 Na tabela, a coluna CD CX mostra `-*-` para esses itens, para diferenciar do CD zerado (`0`). No CSV, `ESTOQUE_CD_CX` continua numérico (0).
 
