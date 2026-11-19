@@ -415,6 +415,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <p class="print-heading" id="excessoContexto"></p>
 <div class="supplier-filter no-print">
 <button type="button" class="good" id="printExcesso">Imprimir relatório de excesso</button>
+<button type="button" id="csvExcesso">Exportar CSV</button>
 <label>Curva <select id="excessoCurva"><option value="">Todas</option><option>A</option><option>B</option><option>C</option></select></label>
 <label>Venda máxima (cx/dia) <input id="excessoVenda" type="number" min="0" step="any" value="1"></label>
 <label>Cobertura mínima (dias) <input id="excessoDias" type="number" min="0" step="any" value="30"></label>
@@ -847,9 +848,24 @@ function renderExcesso(){
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
   `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td></tr>`
  ).join("")||'<tr><td colspan="8">Nenhum produto para os limites selecionados.</td></tr>';
+ return {caixas,totalFinanceiro,quantidade:linhas.length};
 }
 $("excessoPanel").ontoggle=renderExcesso;
 for(const id of ["excessoCurva","excessoVenda","excessoDias","excessoMinCx","excessoMinValor","excessoOrdem"])$(id).oninput=renderExcesso;
+$("csvExcesso").onclick=()=>{
+ const {caixas,totalFinanceiro,quantidade}=renderExcesso();
+ const tabela=$("excessoRows").closest("table");
+ const valores=linha=>Array.from(linha.cells,celula=>celula.textContent);
+ const registros=[valores(tabela.tHead.rows[0])];
+ if(quantidade)for(const linha of $("excessoRows").rows)registros.push(valores(linha));
+ registros.push(["","TOTAL","","","","",inteiroExcesso.format(caixas),totalFinanceiro]);
+ const campo=valor=>{
+  const seguro=/^\s*[=+@\-\t\r]/.test(valor)?"'"+valor:valor;
+  return '"'+seguro.replace(/"/g,'""')+'"';
+ };
+ const csv=registros.map(linha=>linha.map(campo).join(";")).join("\r\n");
+ download(new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"}),"Excesso_estoque_ABC.csv");
+};
 $("printExcesso").onclick=()=>{
  renderExcesso();
  document.body.classList.add("print-excesso");
