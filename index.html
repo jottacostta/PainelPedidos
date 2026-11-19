@@ -428,6 +428,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 </select></label>
 </div>
 <p id="excessoResumo" aria-live="polite"></p>
+<p id="excessoTotais" aria-live="polite"></p>
 <div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (cx)</th><th>Venda (cx/dia)</th><th>Cobertura (dias)</th><th>Excesso (cx)</th><th>Valor do excesso (R$)</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
 </div></details>
 <section id="logisticsPrint" aria-hidden="true">
@@ -835,6 +836,14 @@ function renderExcesso(){
  });
  $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} cx/dia · Cobertura mínima: ${dias.value||0} dias · Excesso mínimo: ${minCx.value||0} cx · Valor mínimo: ${minValor.value===""?"sem limite":money(minValor.valueAsNumber)} · Ordem: ${ordem.selectedOptions[0].textContent} · Período de vendas: ${state.config.periodoVenda} dias`;
  $("excessoResumo").textContent="Curva A: "+contagem.A+" · Curva B: "+contagem.B+" · Curva C: "+contagem.C;
+ let caixas=0,valor=0,semCusto=0;
+ for(const linha of linhas){
+  caixas+=linha.excesso;
+  if(linha.valorExcesso===null)semCusto++;
+  else valor+=linha.valorExcesso;
+ }
+ const totalFinanceiro=semCusto===0?money(valor):semCusto===linhas.length?"indisponível (sem custo informado)":money(valor)+" (parcial; produtos sem custo: "+semCusto+")";
+ $("excessoTotais").textContent="Total de caixas em excesso: "+inteiroExcesso.format(caixas)+" cx · Valor total do excesso: "+totalFinanceiro;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
   `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td></tr>`
  ).join("")||'<tr><td colspan="8">Nenhum produto para os limites selecionados.</td></tr>';

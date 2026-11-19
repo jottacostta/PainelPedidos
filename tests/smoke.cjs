@@ -569,6 +569,8 @@ async function checkExcesso(page) {
   const rows = page.locator('#excessoRows tr');
   await rows.getByText('Sem venda no período', { exact: true }).waitFor();
   assert.equal(await rows.count(), 2);
+  const totais=page.locator('#excessoTotais');
+  assert.match(await totais.innerText(), /56 cx.*5\.550,00/);
   const hosts = () => rows.locator('td:first-child').allTextContents();
   for (const [ordem, esperado] of [
     ['az', ['101','103']], ['za', ['103','101']], ['cxDesc', ['101','103']],
@@ -581,12 +583,15 @@ async function checkExcesso(page) {
   assert.deepEqual(await hosts(), ['103']);
   await page.locator('#excessoMinCx').fill('6');
   assert.match(await rows.innerText(), /Nenhum produto/);
+  assert.match(await totais.innerText(), /0 cx.*0,00/);
   await page.locator('#excessoMinValor').fill('');
   assert.deepEqual(await hosts(), ['101']);
   await page.evaluate(() => { window.print = () => window.dispatchEvent(new Event('beforeprint')); });
   await page.locator('#printExcesso').click();
   await page.emulateMedia({ media: 'print' });
   assert(await rows.isVisible());
+  assert(await totais.isVisible());
+  assert.match(await totais.innerText(), /51 cx.*2\.550,00/);
   assert.deepEqual(await hosts(), ['101']);
   assert.match(await page.locator('#excessoContexto').innerText(), /Excesso mínimo: 6 cx.*Menor valor do excesso/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
