@@ -545,7 +545,12 @@ async function checkFaltaEPasta(page) {
   await page.locator('[data-filter="LIMPEZA"]').click();
   await page.locator('#rows tr').getByText('900100', { exact: true }).waitFor();
   await carregar();
-  assert.equal(await page.locator('#rows tr').filter({ hasText: '900100' }).locator('td').nth(6).innerText(), 'LIMPEZA');
+  const pasta=page.getByLabel('Pasta do produto 900100');
+  assert.equal(await pasta.inputValue(), 'LIMPEZA');
+  await pasta.selectOption('BEBIDAS');
+  assert.equal(await pasta.inputValue(), 'BEBIDAS');
+  await carregar();
+  assert.equal(await pasta.inputValue(), 'BEBIDAS');
 }
 
 async function checkExcesso(page) {
