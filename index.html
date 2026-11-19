@@ -403,6 +403,18 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <div class="pager" style="margin-top:10px"><button id="logisticsPrev" disabled type="button">Anterior</button><span id="logisticsPageLabel" class="small">Página 1 de 1</span><button id="logisticsNext" disabled type="button">Próxima</button><span class="small">100 registros por página</span></div>
 </div>
 </details>
+<details class="panel no-print" id="excessoPanel">
+<summary><h2>Excesso de estoque por curva ABC</h2></summary>
+<div class="support-content">
+<p>Estoque físico da loja. A cobertura é o estoque dividido pela venda média diária. O excesso em caixas é a quantidade acima da cobertura da curva mais dois dias de exposição e pulmão.</p>
+<div class="supplier-filter">
+<label>Curva <select id="excessoCurva"><option value="">Todas</option><option>A</option><option>B</option><option>C</option></select></label>
+<label>Venda máxima (cx/dia) <input id="excessoVenda" type="number" min="0" step="any" value="1"></label>
+<label>Cobertura mínima (dias) <input id="excessoDias" type="number" min="0" step="any" value="30"></label>
+</div>
+<p id="excessoResumo" aria-live="polite"></p>
+<div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (cx)</th><th>Venda (cx/dia)</th><th>Cobertura (dias)</th><th>Excesso (cx)</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
+</div></details>
 <section id="logisticsPrint" aria-hidden="true">
 <h1>JBS REPOSIÇÃO — ACOMPANHAMENTO DE PEDIDOS</h1>
 <div id="logisticsPrintInfo"></div>
@@ -734,7 +746,32 @@ function visible(){
 }
 let logisticsPage=0;
 function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
-function render(){const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${p.cdNaoInformado?"-*-":fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${pedidoBloqueadoCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="13">Nenhum produto encontrado.</td></tr>';
+function renderExcesso(){
+ const painel=$("excessoPanel");
+ if(!painel.open)return;
+ const venda=$("excessoVenda"),dias=$("excessoDias"),curva=$("excessoCurva").value;
+ const linhas=[];
+ const contagem={A:0,B:0,C:0};
+ if(venda.validity.valid&&dias.validity.valid){
+  for(const p of produtosComCurvaDoGrupo()){
+   const abc=confirmedCurve(p),estoque=p.estoqueLojaCx,media=p.mediaVendaCxDia;
+   if(!Object.hasOwn(contagem,abc)||!(estoque>0)||media==null||media<0)continue;
+   const excesso=estoque-p.necessidadeCaixa;
+   const cobertura=media===0?Infinity:estoque/media;
+   if(excesso<=0||media>(venda.value===""?Infinity:venda.valueAsNumber)||cobertura<(dias.valueAsNumber||0))continue;
+   contagem[abc]++;
+   if(!curva||curva===abc)linhas.push({p,abc,estoque,media,cobertura,excesso});
+  }
+ }
+ linhas.sort((a,b)=>b.cobertura-a.cobertura||b.excesso-a.excesso);
+ $("excessoResumo").textContent="Curva A: "+contagem.A+" · Curva B: "+contagem.B+" · Curva C: "+contagem.C;
+ $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso})=>
+  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${fmt.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":fmt.format(cobertura)}</td><td>${fmt.format(excesso)}</td></tr>`
+ ).join("")||'<tr><td colspan="7">Nenhum produto para os limites selecionados.</td></tr>';
+}
+$("excessoPanel").ontoggle=renderExcesso;
+for(const id of ["excessoCurva","excessoVenda","excessoDias"])$(id).oninput=renderExcesso;
+function render(){renderExcesso();const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${p.cdNaoInformado?"-*-":fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${pedidoBloqueadoCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="13">Nenhum produto encontrado.</td></tr>';
  $("count").textContent=`${fmt.format(all.length)} registros`;const pages=Math.max(1,Math.ceil(all.length/state.pageSize));$("pageLabel").textContent=`Página ${state.page+1} de ${pages}`;$("prev").disabled=state.page===0;$("next").disabled=state.page>=pages-1;
  const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));$("kStockCost").textContent=campoAtivo("f052")?money(p.reduce((s,x)=>s+num(x.estoqueCustoERP),0)):"—";$("abcRuleText").textContent=abcPorFaturamento()?"Curva ABC por faturamento (campo 001 · Valor Venda) no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do valor acumulado, B até 95% e C o restante.":"Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.";renderCampos();renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
 function renderDiag(){const d=state.diagnostics;if(!d)return;const pct=(a)=>`${(a/d.total*100).toFixed(1).replace(".",",")}%`;const items=[["ERP analisado",fmt.format(d.total)],["MIX encontrado",`${fmt.format(d.mm)} (${pct(d.mm)})`],["MIX ausente",fmt.format(d.missM)]];$("diagnostics").innerHTML=items.map(([a,b])=>`<div class="diag">${a}<b>${b}</b></div>`).join("")}
