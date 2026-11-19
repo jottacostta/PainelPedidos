@@ -88,10 +88,22 @@ async function checkBackupAndLogistics(page) {
   const order = page.locator('#rows tr').filter({ hasText: 'ZETA' });
   assert.equal(await order.locator('.order-column').innerText(), '8');
   assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
+  await page.locator('#suggestBtn').click();
+  const suggested = page.locator('#suggestionRows tr').filter({ hasText: 'ZETA' });
+  assert.equal(await suggested.locator('td').nth(6).innerText(), '8');
   await order.locator('[data-edit-code]').click();
-  await page.locator('#manualEditValue').fill('9');
+  await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
-  assert.match(await order.locator('.order-column').innerText(), /^9/);
+  await page.locator('#search').fill('ZETA');
+  await page.evaluate(() => {
+    window.print = () => {
+      window.printedOrders = Array.from(document.querySelectorAll('#suggestionRows tr'),
+        row => [row.cells[1].textContent, row.cells[6].textContent]);
+    };
+  });
+  await page.locator('#printSuggestions').click();
+  assert.deepEqual(await page.evaluate(() => window.printedOrders), [['601', '3']]);
+  await page.locator('#search').fill('');
 
   await page.locator('#supplierFilter').selectOption('ALFA');
   assert.equal(await page.locator('#logisticsRows tr').count(), 2);
