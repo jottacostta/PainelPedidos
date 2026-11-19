@@ -579,6 +579,18 @@ async function checkExcesso(page) {
     await page.locator('#excessoOrdem').selectOption(ordem);
     assert.deepEqual(await hosts(), esperado);
   }
+  await page.evaluate(() => { window.print = () => window.dispatchEvent(new Event('beforeprint')); });
+  await page.locator('#excessoLinhasImprimir').fill('1');
+  await page.locator('#printExcesso').click();
+  assert.deepEqual(await hosts(), ['101']);
+  assert.match(await totais.innerText(), /51 cx/);
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  assert.deepEqual(await hosts(), ['101','103']);
+  await page.locator('#excessoTodasLinhas').click();
+  await page.locator('#printExcesso').click();
+  assert.deepEqual(await hosts(), ['101','103']);
+  assert.match(await totais.innerText(), /56 cx/);
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await page.locator('#excessoMinValor').fill('2600');
   assert.deepEqual(await hosts(), ['103']);
   await page.locator('#excessoMinCx').fill('6');
@@ -596,6 +608,16 @@ async function checkExcesso(page) {
   assert.match(await page.locator('#excessoContexto').innerText(), /Excesso mínimo: 6 cx.*Menor valor do excesso/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await page.emulateMedia({ media: 'screen' });
+  const baixar=page.waitForEvent('download');
+  await page.locator('#csvExcesso').click();
+  const arquivo=await baixar;
+  assert.equal(arquivo.suggestedFilename(), 'Excesso_estoque_ABC.csv');
+  const partes=[];
+  for await(const parte of await arquivo.createReadStream()) partes.push(parte);
+  const registros=Buffer.concat(partes).toString('utf8').split('\r\n');
+  assert.equal(registros.length,3);
+  assert.match(registros[1], /^"101";"PRODUTO 101"/);
+  assert.match(registros[2], /"TOTAL".*"51";".*2\.550,00"/);
   await page.locator('#excessoMinCx').fill('');
   await page.locator('#excessoCurva').selectOption('A');
   assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1', '60', '51']);
