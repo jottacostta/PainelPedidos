@@ -418,8 +418,17 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <label>Curva <select id="excessoCurva"><option value="">Todas</option><option>A</option><option>B</option><option>C</option></select></label>
 <label>Venda máxima (cx/dia) <input id="excessoVenda" type="number" min="0" step="any" value="1"></label>
 <label>Cobertura mínima (dias) <input id="excessoDias" type="number" min="0" step="any" value="30"></label>
+<label>Excesso mínimo (cx) <input id="excessoMinCx" type="number" min="0" step="any"></label>
+<label>Valor mínimo do excesso (R$) <input id="excessoMinValor" type="number" min="0" step="0.01"></label>
+<label>Ordenar por <select id="excessoOrdem">
+<option value="cobertura">Maior cobertura</option>
+<option value="az">Produto (A–Z)</option><option value="za">Produto (Z–A)</option>
+<option value="valorDesc">Maior valor do excesso</option><option value="valorAsc">Menor valor do excesso</option>
+<option value="cxDesc">Maior excesso (cx)</option><option value="cxAsc">Menor excesso (cx)</option>
+</select></label>
 </div>
 <p id="excessoResumo" aria-live="polite"></p>
+<p id="excessoTotais" aria-live="polite"></p>
 <div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (cx)</th><th>Venda (cx/dia)</th><th>Cobertura (dias)</th><th>Excesso (cx)</th><th>Valor do excesso (R$)</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
 </div></details>
 <section id="logisticsPrint" aria-hidden="true">
@@ -793,29 +802,54 @@ function renderExcesso(){
  const painel=$("excessoPanel");
  if(!painel.open)return;
  const venda=$("excessoVenda"),dias=$("excessoDias"),curva=$("excessoCurva").value;
+ const minCx=$("excessoMinCx"),minValor=$("excessoMinValor"),ordem=$("excessoOrdem");
  const linhas=[];
  const contagem={A:0,B:0,C:0};
- if(venda.validity.valid&&dias.validity.valid){
+ if([venda,dias,minCx,minValor].every(campo=>campo.validity.valid)){
   for(const p of produtosComCurvaDoGrupo()){
    const abc=confirmedCurve(p),estoque=p.estoqueLojaCx,media=p.mediaVendaCxDia;
    if(!Object.hasOwn(contagem,abc)||!(estoque>0)||media==null||media<0)continue;
    const excesso=estoque-p.necessidadeCaixa;
    const cobertura=media===0?Infinity:estoque/media;
    if(excesso<=0||media>(venda.value===""?Infinity:venda.valueAsNumber)||cobertura<(dias.valueAsNumber||0))continue;
-   contagem[abc]++;
    const valorExcesso=campoAtivo("f052")&&p.estoqueCustoERP!=null?(excesso/estoque)*num(p.estoqueCustoERP):null;
+   if(excesso<minCx.valueAsNumber)continue;
+   if(minValor.value!==""&&(valorExcesso===null||valorExcesso<minValor.valueAsNumber))continue;
+   if(!curva||curva===abc)contagem[abc]++;
    if(!curva||curva===abc)linhas.push({p,abc,estoque,media,cobertura,excesso,valorExcesso});
   }
  }
- linhas.sort((a,b)=>b.cobertura-a.cobertura||b.excesso-a.excesso);
- $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} cx/dia · Cobertura mínima: ${dias.value||0} dias · Período de vendas: ${state.config.periodoVenda} dias`;
+ const nomes=new Intl.Collator("pt-BR",{sensitivity:"base",numeric:true});
+ linhas.sort((a,b)=>{
+  const nome=nomes.compare(a.p.descricao,b.p.descricao)||nomes.compare(a.p.codigo,b.p.codigo);
+  switch(ordem.value){
+   case "az": return nome;
+   case "za": return -nome;
+   case "cxAsc": return a.excesso-b.excesso||nome;
+   case "cxDesc": return b.excesso-a.excesso||nome;
+   case "valorAsc":
+   case "valorDesc":
+    if(a.valorExcesso===null||b.valorExcesso===null)return Number(a.valorExcesso===null)-Number(b.valorExcesso===null)||nome;
+    return (ordem.value==="valorAsc"?a.valorExcesso-b.valorExcesso:b.valorExcesso-a.valorExcesso)||nome;
+   default: return b.cobertura-a.cobertura||b.excesso-a.excesso||nome;
+  }
+ });
+ $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} cx/dia · Cobertura mínima: ${dias.value||0} dias · Excesso mínimo: ${minCx.value||0} cx · Valor mínimo: ${minValor.value===""?"sem limite":money(minValor.valueAsNumber)} · Ordem: ${ordem.selectedOptions[0].textContent} · Período de vendas: ${state.config.periodoVenda} dias`;
  $("excessoResumo").textContent="Curva A: "+contagem.A+" · Curva B: "+contagem.B+" · Curva C: "+contagem.C;
+ let caixas=0,valor=0,semCusto=0;
+ for(const linha of linhas){
+  caixas+=linha.excesso;
+  if(linha.valorExcesso===null)semCusto++;
+  else valor+=linha.valorExcesso;
+ }
+ const totalFinanceiro=semCusto===0?money(valor):semCusto===linhas.length?"indisponível (sem custo informado)":money(valor)+" (parcial; produtos sem custo: "+semCusto+")";
+ $("excessoTotais").textContent="Total de caixas em excesso: "+inteiroExcesso.format(caixas)+" cx · Valor total do excesso: "+totalFinanceiro;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
   `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td></tr>`
  ).join("")||'<tr><td colspan="8">Nenhum produto para os limites selecionados.</td></tr>';
 }
 $("excessoPanel").ontoggle=renderExcesso;
-for(const id of ["excessoCurva","excessoVenda","excessoDias"])$(id).oninput=renderExcesso;
+for(const id of ["excessoCurva","excessoVenda","excessoDias","excessoMinCx","excessoMinValor","excessoOrdem"])$(id).oninput=renderExcesso;
 $("printExcesso").onclick=()=>{
  renderExcesso();
  document.body.classList.add("print-excesso");
