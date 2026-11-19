@@ -337,7 +337,7 @@ async function checkInferredFolders(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 5'));
 
   const rows = await page.locator('#rows tr').evaluateAll(items =>
-    items.map(row => [row.cells[6].textContent, row.cells[12].textContent]));
+    items.map(row => [row.cells[6].querySelector("select")?.value ?? row.cells[6].textContent, row.cells[12].textContent]));
   assert.deepEqual(rows.map(row => row[0]), ['LIMPEZA', 'LIMPEZA', '', 'LIMPEZA', 'BEBIDAS']);
   assert.match(rows[0][1], /SEM CADASTRO MIX.*PASTA CLASSIFICADA POR SEMELHANÇA/);
   assert.match(rows[1][1], /PASTA CLASSIFICADA POR SEMELHANÇA/);
