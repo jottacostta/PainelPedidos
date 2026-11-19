@@ -563,22 +563,23 @@ function classificarABC(products){
   p.abc=num(p.quantidadeCaixa)<=0&&num(p.vendaUnidade)>0?"":classePorHost.get(p.codigo)||"C";
  }
 }
-function prefixoDaDescricao(descricao){
- const [tipo,marca]=norm(descricao).match(/[A-Z0-9]+/g)||[];
- return tipo&&marca&&/[A-Z]/.test(tipo)&&/[A-Z]/.test(marca)?tipo+" "+marca:"";
+function prefixosDaDescricao(descricao){
+ const [tipo,marca,linha]=norm(descricao).match(/[A-Z0-9]+/g)||[];
+ if(!tipo||!marca||!/[A-Z]/.test(tipo)||!/[A-Z]/.test(marca))return [];
+ if(!/^(BISCOIT(?:O|OS)?|BISCOT)$/.test(tipo))return [tipo+" "+marca];
+ const prefixo="BISCOITO "+marca;
+ return linha&&/[A-Z]/.test(linha)?[prefixo+" "+linha,prefixo]:[prefixo];
 }
 function indexarPastasPorDescricao(cadastros){
  const referencias=new Map();
  for(const cadastro of cadastros){
-  const prefixo=prefixoDaDescricao(cadastro.descricao);
   const pasta=String(cadastro.pasta??"").trim();
-  if(!prefixo||!pasta)continue;
-  const referencia=referencias.get(prefixo);
-  if(!referencia){
-   referencias.set(prefixo,{pasta,divergente:false});
-   continue;
+  if(!pasta)continue;
+  for(const prefixo of prefixosDaDescricao(cadastro.descricao)){
+   const referencia=referencias.get(prefixo);
+   if(!referencia)referencias.set(prefixo,{pasta,divergente:false});
+   else if(norm(referencia.pasta)!==norm(pasta))referencia.divergente=true;
   }
-  if(norm(referencia.pasta)!==norm(pasta))referencia.divergente=true;
  }
  return referencias;
 }
@@ -589,7 +590,7 @@ function cruzar(erp){
  const products=erp.map(src=>{const p={...src,alertasCadastro:[...src.alertasCadastro]};const m=mi.get(p.codigo);
  if(m){mm++;p.pasta=String(m.pasta??"");p.pallet=num(m.pallet);p.fornecedor=String(m.fornecedor??"");p.comprador=String(m.comprador??"");p.valorCaixa=num(m.valorCaixa);p.valorUnitario=num(m.valorUnitario)}else{missM++;p.alertasCadastro.push("SEM CADASTRO MIX")}
  if(!p.pasta.trim()){
-  const referencia=pastasPorDescricao.get(prefixoDaDescricao(p.descricao));
+  const referencia=prefixosDaDescricao(p.descricao).map(prefixo=>pastasPorDescricao.get(prefixo)).find(Boolean);
   if(referencia&&!referencia.divergente){
    p.pasta=referencia.pasta;
    p.alertasCadastro.push("PASTA CLASSIFICADA POR SEMELHANÇA");
