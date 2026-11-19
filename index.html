@@ -304,6 +304,11 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   main { display: block; padding: 0; width: 100%; max-width: none; }
   body.print-logistics #suggestions { display: none !important; }
   body.print-logistics #logisticsPrint, #suggestions .print-heading { display: block; }
+  body.print-excesso main > #excessoPanel { display: block !important; border: 0; padding: 0; box-shadow: none; }
+  body.print-excesso #suggestions { display: none !important; }
+  #excessoPanel .tablewrap { overflow: visible; max-height: none; }
+  #excessoPanel table { width: 100%; min-width: 0; }
+  #excessoPanel .print-heading { display: block; }
   #suggestions { padding: 0; border: 0; box-shadow: none; margin: 0; }
   #suggestions .tablewrap { max-height: none; overflow: visible; border: 0; border-radius: 0; }
   .print-heading h1, #logisticsPrint h1 { font-size: 16pt; margin: 0 0 6px; }
@@ -407,7 +412,9 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <summary><h2>Excesso de estoque por curva ABC</h2></summary>
 <div class="support-content">
 <p>Estoque físico da loja. A cobertura é o estoque dividido pela venda média diária. O excesso em caixas é a quantidade acima da cobertura da curva mais dois dias de exposição e pulmão.</p>
-<div class="supplier-filter">
+<p class="print-heading" id="excessoContexto"></p>
+<div class="supplier-filter no-print">
+<button type="button" class="good" id="printExcesso">Imprimir relatório de excesso</button>
 <label>Curva <select id="excessoCurva"><option value="">Todas</option><option>A</option><option>B</option><option>C</option></select></label>
 <label>Venda máxima (cx/dia) <input id="excessoVenda" type="number" min="0" step="any" value="1"></label>
 <label>Cobertura mínima (dias) <input id="excessoDias" type="number" min="0" step="any" value="30"></label>
@@ -746,6 +753,7 @@ function visible(){
 }
 let logisticsPage=0;
 function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
+const inteiroExcesso=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
 function renderExcesso(){
  const painel=$("excessoPanel");
  if(!painel.open)return;
@@ -765,13 +773,19 @@ function renderExcesso(){
   }
  }
  linhas.sort((a,b)=>b.cobertura-a.cobertura||b.excesso-a.excesso);
+ $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} cx/dia · Cobertura mínima: ${dias.value||0} dias · Período de vendas: ${state.config.periodoVenda} dias`;
  $("excessoResumo").textContent="Curva A: "+contagem.A+" · Curva B: "+contagem.B+" · Curva C: "+contagem.C;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
-  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${fmt.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":fmt.format(cobertura)}</td><td>${fmt.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td></tr>`
+  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td></tr>`
  ).join("")||'<tr><td colspan="8">Nenhum produto para os limites selecionados.</td></tr>';
 }
 $("excessoPanel").ontoggle=renderExcesso;
 for(const id of ["excessoCurva","excessoVenda","excessoDias"])$(id).oninput=renderExcesso;
+$("printExcesso").onclick=()=>{
+ renderExcesso();
+ document.body.classList.add("print-excesso");
+ window.print();
+};
 function render(){renderExcesso();const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${p.cdNaoInformado?"-*-":fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${pedidoBloqueadoCD(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td></tr>`).join("")||'<tr><td colspan="13">Nenhum produto encontrado.</td></tr>';
  $("count").textContent=`${fmt.format(all.length)} registros`;const pages=Math.max(1,Math.ceil(all.length/state.pageSize));$("pageLabel").textContent=`Página ${state.page+1} de ${pages}`;$("prev").disabled=state.page===0;$("next").disabled=state.page>=pages-1;
  const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));$("kStockCost").textContent=campoAtivo("f052")?money(p.reduce((s,x)=>s+num(x.estoqueCustoERP),0)):"—";$("abcRuleText").textContent=abcPorFaturamento()?"Curva ABC por faturamento (campo 001 · Valor Venda) no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do valor acumulado, B até 95% e C o restante.":"Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.";renderCampos();renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
@@ -884,13 +898,13 @@ $("printLogistics").onclick=()=>{
  document.body.classList.add("print-logistics");
  window.print();
 };
-window.addEventListener("afterprint",()=>document.body.classList.remove("print-logistics"));
+window.addEventListener("afterprint",()=>document.body.classList.remove("print-logistics","print-excesso"));
 $("printSuggestions").onclick=()=>{
  if(!renderSugestoes()){notice("Nenhum pedido positivo para imprimir com os filtros atuais.","error");return}
  window.print();
 };
 window.addEventListener("beforeprint",()=>{
- if(!document.body.classList.contains("print-logistics")&&!$("suggestions").classList.contains("hidden"))renderSugestoes();
+ if(!document.body.classList.contains("print-excesso")&&!document.body.classList.contains("print-logistics")&&!$("suggestions").classList.contains("hidden"))renderSugestoes();
 });
 function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td></tr>`).join("")||'<tr><td colspan="9">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
 $("suggestBtn").onclick=renderSugestoes;
