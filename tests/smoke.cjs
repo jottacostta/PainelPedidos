@@ -579,6 +579,18 @@ async function checkExcesso(page) {
     await page.locator('#excessoOrdem').selectOption(ordem);
     assert.deepEqual(await hosts(), esperado);
   }
+  await page.evaluate(() => { window.print = () => window.dispatchEvent(new Event('beforeprint')); });
+  await page.locator('#excessoLinhasImprimir').fill('1');
+  await page.locator('#printExcesso').click();
+  assert.deepEqual(await hosts(), ['101']);
+  assert.match(await totais.innerText(), /51 cx/);
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  assert.deepEqual(await hosts(), ['101','103']);
+  await page.locator('#excessoTodasLinhas').click();
+  await page.locator('#printExcesso').click();
+  assert.deepEqual(await hosts(), ['101','103']);
+  assert.match(await totais.innerText(), /56 cx/);
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await page.locator('#excessoMinValor').fill('2600');
   assert.deepEqual(await hosts(), ['103']);
   await page.locator('#excessoMinCx').fill('6');
