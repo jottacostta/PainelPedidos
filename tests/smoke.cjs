@@ -519,9 +519,9 @@ async function checkOfflineDownload(page) {
 }
 
 async function checkFaltaEPasta(page) {
-  const products = [[-143, 2], [-187, 34], [0, 97], [1, 15]].map(([estoqueLojaUnidade, estoqueCDCaixa], i) => ({
+  const products = [[-143, 2, 1, 0], [-187, 34, 0, 1], [0, 97, 0, 0], [1, 15, 1, 1], [0, 2, 1, 1]].map(([estoqueLojaUnidade, estoqueCDCaixa, pendenteCaixa, transitoCaixa], i) => ({
     codigo: String(900100 + i), descricao: 'PRODUTO ' + i, quantidadeCaixa: 1,
-    estoqueLojaUnidade, estoqueCDCaixa, pendenteCaixa: 1, transitoCaixa: 1,
+    estoqueLojaUnidade, estoqueCDCaixa, pendenteCaixa, transitoCaixa,
     pasta: i ? 'LIMPEZA' : '', abc: 'C', alertasCadastro: [],
   }));
   const backup = { name: 'rupturas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ products })) };
@@ -534,9 +534,13 @@ async function checkFaltaEPasta(page) {
     await page.locator('#rows tr').getByText('900100', { exact: true }).waitFor();
   }
   await carregar();
-  assert.equal(await page.locator('#kFalta').innerText(), '3');
+  assert.equal(await page.locator('#kFalta').innerText(), '4');
   await page.locator('#onlyRupture').check();
-  assert.equal(await page.locator('#rows tr').count(), 3);
+  assert.equal(await page.locator('#rows tr').count(), 4);
+  for (const [host, situacao] of [['900100', 'RUPTURA TEMPORÁRIA'], ['900101', 'RUPTURA TEMPORÁRIA'], ['900102', 'FALTA'], ['900104', 'RUPTURA TEMPORÁRIA']]) {
+    const linha = page.locator('#rows tr').filter({ has: page.getByText(host, { exact: true }) });
+    assert.equal(await linha.locator('td').nth(5).innerText(), situacao);
+  }
   await page.getByLabel('Pasta do produto 900100').selectOption('LIMPEZA');
   await page.locator('[data-filter="LIMPEZA"]').click();
   await page.locator('#rows tr').getByText('900100', { exact: true }).waitFor();
