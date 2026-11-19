@@ -518,6 +518,32 @@ async function checkOfflineDownload(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Versão offline baixada'));
 }
 
+async function checkFaltaEPasta(page) {
+  const products = [[-143, 2], [-187, 34], [0, 97], [1, 15]].map(([estoqueLojaUnidade, estoqueCDCaixa], i) => ({
+    codigo: String(900100 + i), descricao: 'PRODUTO ' + i, quantidadeCaixa: 1,
+    estoqueLojaUnidade, estoqueCDCaixa, pendenteCaixa: 1, transitoCaixa: 1,
+    pasta: i ? 'LIMPEZA' : '', abc: 'C', alertasCadastro: [],
+  }));
+  const backup = { name: 'rupturas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ products })) };
+  async function carregar() {
+    await page.reload();
+    await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
+    await page.locator('#hideNegative').uncheck();
+    await page.locator('#hideZero').uncheck();
+    await page.locator('#backupFile').setInputFiles(backup);
+    await page.locator('#rows tr').getByText('900100', { exact: true }).waitFor();
+  }
+  await carregar();
+  assert.equal(await page.locator('#kFalta').innerText(), '3');
+  await page.locator('#onlyRupture').check();
+  assert.equal(await page.locator('#rows tr').count(), 3);
+  await page.getByLabel('Pasta do produto 900100').selectOption('LIMPEZA');
+  await page.locator('[data-filter="LIMPEZA"]').click();
+  await page.locator('#rows tr').getByText('900100', { exact: true }).waitFor();
+  await carregar();
+  assert.equal(await page.locator('#rows tr').filter({ hasText: '900100' }).locator('td').nth(6).innerText(), 'LIMPEZA');
+}
+
 async function checkExcesso(page) {
   await page.reload();
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
@@ -624,6 +650,7 @@ async function checkViewport(browser, width) {
       await checkInferredFolders(page);
       await checkScopedABC(page);
       await checkBackupAndLogistics(page);
+      await checkFaltaEPasta(page);
       await checkExcesso(page);
       await checkERPFields(page);
       await checkOfflineDownload(page);
