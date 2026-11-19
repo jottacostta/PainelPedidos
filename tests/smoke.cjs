@@ -518,6 +518,30 @@ async function checkOfflineDownload(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Versão offline baixada'));
 }
 
+async function checkExcesso(page) {
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
+  const products = [
+    ['101', 'A', 30, 60], ['102', 'B', 60, 100], ['103', 'C', 0, 5],
+  ].map(([codigo, abc, vendaUnidade, estoqueLojaUnidade]) => ({
+    codigo, abc, vendaUnidade, estoqueLojaUnidade, quantidadeCaixa: 1,
+    descricao: 'PRODUTO ' + codigo, estoqueCustoERP: 3000, alertasCadastro: [],
+  }));
+  await page.locator('#backupFile').setInputFiles({
+    name: 'excesso.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ products })),
+  });
+  await page.locator('#excessoPanel summary').click();
+  const rows = page.locator('#excessoRows tr');
+  await rows.getByText('Sem venda no período', { exact: true }).waitFor();
+  assert.equal(await rows.count(), 2);
+  await page.locator('#excessoCurva').selectOption('A');
+  assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1', '60', '51']);
+  assert.match(await rows.locator('td').last().innerText(), /2\.550,00/);
+  assert.deepEqual(await page.locator('#period option').allTextContents(), ['15','30','45','60']);
+  await page.locator('#excessoDias').fill('61');
+  assert.match(await rows.innerText(), /Nenhum produto/);
+}
+
 async function checkViewport(browser, width) {
   const page = await browser.newPage({ viewport: { width, height: 850 } });
   const errors = [];
@@ -600,6 +624,7 @@ async function checkViewport(browser, width) {
       await checkInferredFolders(page);
       await checkScopedABC(page);
       await checkBackupAndLogistics(page);
+      await checkExcesso(page);
       await checkERPFields(page);
       await checkOfflineDownload(page);
     }
