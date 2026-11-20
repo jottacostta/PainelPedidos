@@ -71,13 +71,13 @@ async function checkBackupAndLogistics(page) {
   };
   const backup = {
     products: [
-      { ...base, codigo: '601', descricao: 'ZETA', fornecedor: 'ALFA', pendenteCaixa: 2 },
+      { ...base, codigo: '1730883', descricao: 'ZETA', fornecedor: 'ALFA', estoqueCDCaixa: 243, vendaUnidade: 0, quantidadeCaixa: 12, abc: 'C', pendenteCaixa: 1 },
       { ...base, codigo: '602', descricao: 'BETA', fornecedor: 'ALFA', transitoCaixa: 3 },
       { ...base, codigo: '603', descricao: 'GAMA', fornecedor: 'OUTRO', pendenteCaixa: 4, transitoCaixa: 1 },
-      { ...base, codigo: '604', descricao: 'DELTA', fornecedor: 'ALFA' },
+      { ...base, codigo: '604', descricao: 'DELTA', fornecedor: 'ALFA', vendaUnidade: 24 },
     ],
     config: { diasA: 8, diasB: 10, diasC: 14, periodoVenda: 30 },
-    matrix: ['601'],
+    matrix: ['1730883'],
   };
   const backupInput = page.locator('#backupFile');
   await backupInput.setInputFiles({
@@ -85,16 +85,21 @@ async function checkBackupAndLogistics(page) {
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
 
-  const order = page.locator('#rows tr').filter({ hasText: 'ZETA' });
+  await page.locator('#hideZero').uncheck();
+  const pendente = page.locator('#rows tr').filter({ hasText: '1730883' });
+  assert.equal(await pendente.locator('.order-column').innerText(), '0');
+  assert.match(await pendente.innerText(), /RUPTURA TEMPORÁRIA/);
+  const order = page.locator('#rows tr').filter({ hasText: 'DELTA' });
   assert.equal(await order.locator('.order-column').innerText(), '8');
   assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
   await page.locator('#suggestBtn').click();
-  const suggested = page.locator('#suggestionRows tr').filter({ hasText: 'ZETA' });
+  assert.equal(await page.locator('#suggestionRows tr').filter({ hasText: '1730883' }).count(), 0);
+  const suggested = page.locator('#suggestionRows tr').filter({ hasText: 'DELTA' });
   assert.equal(await suggested.locator('td').nth(6).innerText(), '8');
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
-  await page.locator('#search').fill('ZETA');
+  await page.locator('#search').fill('DELTA');
   await page.evaluate(() => {
     window.print = () => {
       window.printedOrders = Array.from(document.querySelectorAll('#suggestionRows tr'),
@@ -102,12 +107,12 @@ async function checkBackupAndLogistics(page) {
     };
   });
   await page.locator('#printSuggestions').click();
-  assert.deepEqual(await page.evaluate(() => window.printedOrders), [['601', '3']]);
+  assert.deepEqual(await page.evaluate(() => window.printedOrders), [['604', '3']]);
   await page.locator('#search').fill('');
 
   await page.locator('#supplierFilter').selectOption('ALFA');
   assert.equal(await page.locator('#logisticsRows tr').count(), 2);
-  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 1 itens / 2 caixas');
+  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 1 itens / 1 caixas');
   assert.equal(await page.locator('#transitSummary').innerText(), 'Em trânsito: 1 itens / 3 caixas');
   await page.evaluate(() => { window.print = () => { window.printRequested = true; }; });
   await page.locator('#printLogistics').click();
@@ -115,9 +120,9 @@ async function checkBackupAndLogistics(page) {
   await page.emulateMedia({ media: 'print' });
   assert(await page.locator('#logisticsPrint').isVisible());
   const printRows = page.locator('#logisticsPrintRows tr');
-  assert.deepEqual(await printRows.locator('td:first-child').allTextContents(), ['602', '601']);
+  assert.deepEqual(await printRows.locator('td:first-child').allTextContents(), ['602', '1730883']);
   assert.equal(await page.locator('#logisticsPrintTotals').innerText(),
-    'Pendentes: 1 itens / 2 caixas | Em trânsito: 1 itens / 3 caixas');
+    'Pendentes: 1 itens / 1 caixas | Em trânsito: 1 itens / 3 caixas');
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   assert(!(await page.locator('#logisticsPrint').isVisible()));
   await page.emulateMedia({ media: 'screen' });
@@ -140,8 +145,9 @@ async function checkBackupAndLogistics(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
   assert.equal(await page.locator('#daysA').inputValue(), '8');
   assert.equal(await order.locator('.order-column').innerText(), '8');
+  await page.locator('#hideZero').uncheck();
   await page.locator('[data-filter="MATRIZ"]').click();
-  assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['601']);
+  assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['1730883']);
 }
 
 async function checkRuptureCD(page) {
@@ -439,8 +445,8 @@ async function checkERPFields(page) {
   assert.match((await cells('703'))[12], /MARGEM NEGATIVA/);
   assert.match(await page.locator('#kStockCost').innerText(), /^R\$\s150,00$/);
   assert.match(await page.locator('#abcRuleText').innerText(), /faturamento/);
-  // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → 158.
-  assert.equal((await cells('701'))[9], '158');
+  // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → pedido final 0.
+  assert.equal((await cells('701'))[9], '0');
   // CD zerado (705) e -*- no CD (704): por padrão, os dois são RUPTURA CD com pedido 0.
   assert.equal((await cells('705'))[5], 'RUPTURA CD');
   assert.equal((await cells('705'))[9], '0');
@@ -457,7 +463,7 @@ async function checkERPFields(page) {
   assert.equal((await cells('705'))[9], '0');
   await field('f164x').uncheck();
   assert.equal((await cells('704'))[9], '0');
-  // Valor pelo custo: 701 custo 240 ÷ 300 cx vendidas = 0,80/cx; 158 cx = R$ 126,40.
+  // O indicador considera o custo dos pedidos positivos.
   const valorComCusto = await page.locator('#kValue').innerText();
 
   // 001 desmarcado: ABC volta a caixas vendidas e a margem some.
@@ -480,7 +486,7 @@ async function checkERPFields(page) {
   assert.equal((await cells('701'))[9], '160');
   assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 0 itens / 0 caixas');
   await field('f153').check();
-  assert.equal((await cells('701'))[9], '158');
+  assert.equal((await cells('701'))[9], '0');
 
   // 164 desmarcado: regra RUPTURA CD desligada e a caixa -*- fica bloqueada.
   await field('f164').uncheck();
