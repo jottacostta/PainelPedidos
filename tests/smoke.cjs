@@ -92,13 +92,13 @@ async function checkBackupAndLogistics(page) {
   assert.equal(await pendente.locator('.order-column').innerText(), '0');
   assert.match(await pendente.innerText(), /RUPTURA TEMPORÁRIA/);
   const order = page.locator('#rows tr').filter({ hasText: 'DELTA' });
-  assert.equal(await order.locator('.order-column').innerText(), '8');
-  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0','10','10']);
+  assert.equal(await order.locator('.order-column').innerText(), '7');
+  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0','9','9']);
   assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
   await page.locator('#suggestBtn').click();
   assert.equal(await page.locator('#suggestionRows tr').filter({ hasText: '1730883' }).count(), 0);
   const suggested = page.locator('#suggestionRows tr').filter({ hasText: 'DELTA' });
-  assert.equal(await suggested.locator('td').nth(6).innerText(), '8');
+  assert.equal(await suggested.locator('td').nth(6).innerText(), '7');
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
@@ -157,7 +157,7 @@ async function checkBackupAndLogistics(page) {
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
   assert.equal(await page.locator('#daysA').inputValue(), '8');
-  assert.equal(await order.locator('.order-column').innerText(), '8');
+  assert.equal(await order.locator('.order-column').innerText(), '7');
   await page.locator('#hideZero').uncheck();
   await page.locator('[data-filter="MATRIZ"]').click();
   assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['1730883']);
@@ -268,7 +268,7 @@ async function checkERPBoxSize(page) {
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
   assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
-  assert.deepEqual(rows.map(row => row[9]), ['7', '2', '—', '—']);
+  assert.deepEqual(rows.map(row => row[9]), ['5', '1', '—', '—']);
   assert.match(rows[2][12], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
   assert.match(rows[3][12], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
 }
@@ -276,8 +276,8 @@ async function checkERPBoxSize(page) {
 async function checkDynamicABC(page) {
   const products = [
     { id: '201', sales: 60, packageSize: 12, curve: 'C', order: '3' },
-    { id: '202', sales: 1500, packageSize: 100, curve: 'B', order: '6' },
-    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '24' },
+    { id: '202', sales: 1500, packageSize: 100, curve: 'B', order: '5' },
+    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '19' },
     { id: '204', sales: 0, packageSize: 12, curve: 'C', order: '1' },
     { id: '205', sales: 5000, packageSize: 0, curve: '', order: '—' },
   ];
@@ -397,9 +397,9 @@ async function checkScopedABC(page) {
   assert.deepEqual(await hosts(), ['502']);
   assert.equal(await page.locator('#abcCountAll').innerText(), '3');
   assert.equal(await page.locator('#abcCountA').innerText(), '1');
-  assert.equal(await page.locator('#rows td.order-column').innerText(), '24');
+  assert.equal(await page.locator('#rows td.order-column').innerText(), '19');
   await page.locator('#rows [data-edit-code="502"]').click();
-  assert.equal(await page.locator('#manualEditValue').inputValue(), '24');
+  assert.equal(await page.locator('#manualEditValue').inputValue(), '19');
   await page.locator('#cancelManualEdit').click();
 
   await page.locator('[data-abc-filter="B"]').click();
@@ -458,7 +458,7 @@ async function checkERPFields(page) {
   assert.match((await cells('703'))[12], /MARGEM NEGATIVA/);
   assert.match(await page.locator('#kStockCost').innerText(), /^R\$\s150,00$/);
   assert.match(await page.locator('#abcRuleText').innerText(), /faturamento/);
-  // 701: média 10 cx/dia, curva C (14 dias) + 2 dias de exposição = 160; pendente 2 → pedido final 0.
+  // 701: média 10 cx/dia, curva C (14 dias) = 140; pendente 2 → pedido final 0.
   assert.equal((await cells('701'))[9], '0');
   // CD zerado (705) e -*- no CD (704): por padrão, os dois são RUPTURA CD com pedido 0.
   assert.equal((await cells('705'))[5], 'RUPTURA CD');
@@ -496,7 +496,7 @@ async function checkERPFields(page) {
 
   // 153 desmarcado: pendência zerada no cálculo e no acompanhamento.
   await field('f153').uncheck();
-  assert.equal((await cells('701'))[9], '160');
+  assert.equal((await cells('701'))[9], '140');
   assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 0 itens / 0 caixas');
   await field('f153').check();
   assert.equal((await cells('701'))[9], '0');
@@ -505,7 +505,7 @@ async function checkERPFields(page) {
   await field('f164').uncheck();
   assert.equal((await cells('704'))[9], '0');
   assert.notEqual((await cells('705'))[5], 'RUPTURA CD');
-  assert.equal((await cells('705'))[9], '16');
+  assert.equal((await cells('705'))[9], '14');
   assert.equal(await field('f164x').isDisabled(), true);
   await field('f164').check();
   assert.equal((await cells('705'))[9], '0');
@@ -589,7 +589,7 @@ async function checkExcesso(page) {
   await rows.getByText('Sem venda no período', { exact: true }).waitFor();
   assert.equal(await rows.count(), 2);
   const totais=page.locator('#excessoTotais');
-  assert.match(await totais.innerText(), /56 cx.*5\.550,00/);
+  assert.match(await totais.innerText(), /58 cx.*5\.650,00/);
   const hosts = () => rows.locator('td:first-child').allTextContents();
   for (const [ordem, esperado] of [
     ['az', ['101','103']], ['za', ['103','101']], ['cxDesc', ['101','103']],
@@ -602,15 +602,15 @@ async function checkExcesso(page) {
   await page.locator('#excessoLinhasImprimir').fill('1');
   await page.locator('#printExcesso').click();
   assert.deepEqual(await hosts(), ['101']);
-  assert.match(await totais.innerText(), /51 cx/);
+  assert.match(await totais.innerText(), /53 cx/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   assert.deepEqual(await hosts(), ['101','103']);
   await page.locator('#excessoTodasLinhas').click();
   await page.locator('#printExcesso').click();
   assert.deepEqual(await hosts(), ['101','103']);
-  assert.match(await totais.innerText(), /56 cx/);
+  assert.match(await totais.innerText(), /58 cx/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
-  await page.locator('#excessoMinValor').fill('2600');
+  await page.locator('#excessoMinValor').fill('2700');
   assert.deepEqual(await hosts(), ['103']);
   await page.locator('#excessoMinCx').fill('6');
   assert.match(await rows.innerText(), /Nenhum produto/);
@@ -622,7 +622,7 @@ async function checkExcesso(page) {
   await page.emulateMedia({ media: 'print' });
   assert(await rows.isVisible());
   assert(await totais.isVisible());
-  assert.match(await totais.innerText(), /51 cx.*2\.550,00/);
+  assert.match(await totais.innerText(), /53 cx.*2\.650,00/);
   assert.deepEqual(await hosts(), ['101']);
   assert.match(await page.locator('#excessoContexto').innerText(), /Excesso mínimo: 6 cx.*Menor valor do excesso/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
@@ -636,11 +636,11 @@ async function checkExcesso(page) {
   const registros=Buffer.concat(partes).toString('utf8').split('\r\n');
   assert.equal(registros.length,3);
   assert.match(registros[1], /^"101";"PRODUTO 101"/);
-  assert.match(registros[2], /"TOTAL".*"51";".*2\.550,00"/);
+  assert.match(registros[2], /"TOTAL".*"53";".*2\.650,00"/);
   await page.locator('#excessoMinCx').fill('');
   await page.locator('#excessoCurva').selectOption('A');
-  assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1', '60', '51']);
-  assert.match(await rows.locator('td').last().innerText(), /2\.550,00/);
+  assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1', '60', '53']);
+  assert.match(await rows.locator('td').last().innerText(), /2\.650,00/);
   assert.deepEqual(await page.locator('#period option').allTextContents(), ['15','30','45','60']);
   await page.locator('#excessoDias').fill('61');
   assert.match(await rows.innerText(), /Nenhum produto/);
