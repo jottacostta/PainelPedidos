@@ -11,6 +11,25 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Conferir versão por par de PRs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess
+          from pathlib import Path
+          anchor = '067c7b330cef3593092e1244cfe8eb03f8e037cc'
+          parent = os.environ.get('BASE_SHA')
+          history = subprocess.check_output(['git', 'log', '--first-parent', '--format=%s', anchor + '..' + (parent or 'HEAD')], text=True)
+          count = sum(bool(re.search(r'\(#\d+\)$|^Merge pull request #\d+\b', title)) for title in history.splitlines()) + bool(parent)
+          version = 'V' + str(25 + count // 2)
+          for file, pattern in [('index.html', r'<footer>[^<]*Versão (V\d+)'), ('README.md', r'^# .*Reposição (V\d+)')]:
+              found = re.search(pattern, Path(file).read_text())
+              if not found or found[1] != version:
+                  raise SystemExit(f'{file}: use {version} para a integração número {count} após a PR #30.')
+          PY
       - uses: actions/setup-node@v4
         with:
           node-version: '20'

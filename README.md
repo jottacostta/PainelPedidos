@@ -1,4 +1,4 @@
-# PainelPedidos — JBS Reposição V23
+# PainelPedidos — JBS Reposição V25
 
 Painel web offline para revisar o estoque, calcular a reposição e preparar pedidos para o CPD. A V23 é a versão numerada do layout incorporada pela [PR #5](https://github.com/jottacostta/PainelPedidos/pull/5). As melhorias posteriores estão no [histórico de versões](docs/historico-versoes.md).
 

@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## V25 — PRs #29 e #30
+
+Impressão com o pedido revisado e análise do excesso por curva ABC, com valor a custo e seleção do período de vendas.
+
+## V24 — PRs #27 e #28
+
+Ajuda dos cálculos e pedido final zero para CD CX igual a `-*-`.
+
+## Regra de versionamento
+
+A PR #30 fecha a V25. A partir dela, cada par de PRs mescladas na main avança uma versão. A primeira mantém a versão e a segunda atualiza o rodapé e o README. A PR que registra esta correção conta como a primeira do próximo par. A contagem segue a ordem das integrações, inclusive quando há lacunas nos números das PRs.
+
 ## V23 — layout responsivo do PainelPedidos
 
 - [PR #5](https://github.com/jottacostta/PainelPedidos/pull/5), commit `bfb64d2`. Reorganizou a importação, as sugestões, a revisão de produtos e os painéis recolhíveis para desktop e celular.
