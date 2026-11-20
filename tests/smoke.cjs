@@ -570,6 +570,14 @@ async function checkFaltaEPasta(page) {
   assert.equal(await pasta.inputValue(), 'BEBIDAS');
   await carregar();
   assert.equal(await pasta.inputValue(), 'BEBIDAS');
+  await page.locator('#importarPastas').setInputFiles({
+    name: 'pasta.js', mimeType: 'text/javascript',
+    buffer: Buffer.from('window.PASTAS_POR_HOST = {"900100":"LIMPEZA","900101":"BEBIDAS"};'),
+  });
+  await page.locator('#erpFile').setInputFiles(path.join(__dirname, 'pastas.xlsx'));
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 2'));
+  assert.equal(await pasta.inputValue(), 'LIMPEZA');
+  assert.equal(await page.locator('#rows tr').filter({hasText:'900101'}).locator('td').nth(6).innerText(), 'ERP OFICIAL');
 }
 
 async function checkExcesso(page) {
