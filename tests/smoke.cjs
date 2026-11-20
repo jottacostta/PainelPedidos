@@ -85,6 +85,8 @@ async function checkBackupAndLogistics(page) {
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
 
+  assert.equal(await page.locator('#hideZero').isChecked(), true);
+  assert.equal(await page.locator('#logisticsRows tr').filter({ hasText: '1730883' }).count(), 1);
   await page.locator('#hideZero').uncheck();
   const pendente = page.locator('#rows tr').filter({ hasText: '1730883' });
   assert.equal(await pendente.locator('.order-column').innerText(), '0');
@@ -110,6 +112,7 @@ async function checkBackupAndLogistics(page) {
   assert.deepEqual(await page.evaluate(() => window.printedOrders), [['604', '3']]);
   await page.locator('#search').fill('');
 
+  await page.locator('#hideZero').check();
   await page.locator('#supplierFilter').selectOption('ALFA');
   assert.equal(await page.locator('#logisticsRows tr').count(), 2);
   assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 1 itens / 1 caixas');

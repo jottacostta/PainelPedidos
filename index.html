@@ -402,7 +402,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <summary><h2>Acompanhamento de pedidos</h2></summary>
 <div class="support-content">
 <div class="panel-head logistics-actions"><button id="printLogistics" class="good" type="button">Imprimir acompanhamento</button></div>
-<p class="small">Tabela independente da lista de produtos. Exibe apenas itens com quantidade pendente ou em trânsito maior que zero, conforme o ERP importado. Os filtros operacionais também se aplicam.</p>
+<p class="small">Tabela independente da lista de produtos. Exibe apenas itens com quantidade pendente ou em trânsito maior que zero, conforme o ERP importado. A busca e os filtros de pasta, fornecedor e curva ABC também se aplicam. Pedidos em acompanhamento aparecem mesmo com o pedido final zerado ou negativo.</p>
 <div class="logistics-summary"><span id="pendingSummary">Pedidos pendentes: 0 itens / 0 caixas</span><span id="transitSummary">Em trânsito: 0 itens / 0 caixas</span></div>
 <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de pedidos pendentes e em trânsito"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>FORNECEDOR</th><th>PASTA</th><th>PEDIDO PENDENTE (CX)</th><th>EM TRÂNSITO (CX)</th></tr></thead><tbody id="logisticsRows"><tr><td colspan="6">Importe o ERP para consultar pedidos pendentes e em trânsito.</td></tr></tbody></table></div>
 <div class="pager" style="margin-top:10px"><button id="logisticsPrev" disabled type="button">Anterior</button><span id="logisticsPageLabel" class="small">Página 1 de 1</span><button id="logisticsNext" disabled type="button">Próxima</button><span class="small">100 registros por página</span></div>
@@ -779,9 +779,13 @@ function produtosComCurvaDoGrupo(){
  curvaGrupoCache={chave,produtos};
  return produtos;
 }
-function operationalProducts(){
+function produtosPesquisados(){
  let arr=produtosComCurvaDoGrupo();
  if(state.search){const q=norm(state.search);arr=arr.filter(p=>[p.codigo,p.descricao,p.fornecedor,p.pasta].some(v=>norm(v).includes(q)))}
+ return arr;
+}
+function operationalProducts(){
+ let arr=produtosPesquisados();
  if(state.onlyNegative)arr=arr.filter(p=>pedidoFinalAtual(p)!=null&&pedidoFinalAtual(p)<0);
  else if(state.onlyZero)arr=arr.filter(p=>pedidoFinalAtual(p)!=null&&pedidoFinalAtual(p)===0);
  else {
@@ -798,8 +802,11 @@ function visible(){
  if(state.onlyRupture)arr=arr.filter(emRuptura);
  return arr
 }
+function produtosEmAcompanhamento(){
+ return filtrarCurva(produtosPesquisados()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);
+}
 let logisticsPage=0;
-function renderLogistics(){const arr=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
+function renderLogistics(){const arr=produtosEmAcompanhamento();const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
 const inteiroExcesso=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
 function renderExcesso(limiteImpressao){
  const painel=$("excessoPanel");
@@ -982,7 +989,7 @@ $("saveManualEdit").onclick=()=>{const raw=$("manualEditValue").value,value=Numb
 $("exportBtn").onclick=csv;
 $("printLogistics").onclick=()=>{
  if(!state.products.length){notice("Importe o relatório ERP antes de imprimir o acompanhamento.","error");return}
- const items=filtrarCurva(operationalProducts()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
+ const items=produtosEmAcompanhamento().sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
  if(!items.length){notice("Nenhum pedido pendente ou em trânsito para imprimir com os filtros atuais.","error");return}
  $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td>${fmt.format(pendenteUsado(p))}</td><td>${fmt.format(transitoUsado(p))}</td></tr>`).join("");
  $("logisticsPrintInfo").textContent=`Data: ${new Date().toLocaleString("pt-BR")} | Registros: ${fmt.format(items.length)} | Fornecedor: ${state.supplier||"TODOS"} | Pasta: ${state.folder||"TODAS"}`;
