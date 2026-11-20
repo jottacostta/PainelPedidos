@@ -93,6 +93,7 @@ async function checkBackupAndLogistics(page) {
   assert.match(await pendente.innerText(), /RUPTURA TEMPORÁRIA/);
   const order = page.locator('#rows tr').filter({ hasText: 'DELTA' });
   assert.equal(await order.locator('.order-column').innerText(), '8');
+  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0,00','10,00','10,00']);
   assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
   await page.locator('#suggestBtn').click();
   assert.equal(await page.locator('#suggestionRows tr').filter({ hasText: '1730883' }).count(), 0);
@@ -101,6 +102,7 @@ async function checkBackupAndLogistics(page) {
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
+  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0,00','3,75','3,75']);
   await page.locator('#search').fill('DELTA');
   await page.evaluate(() => {
     window.print = () => {
@@ -686,11 +688,11 @@ async function checkViewport(browser, width) {
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
     assert.deepEqual(await page.locator('#products th').allTextContents(), [
       'HOST', 'DESCRIÇÃO', 'VENDA', 'ESTOQUE UN', 'CD CX', 'SITUAÇÃO',
-      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'MARGEM', 'ALERTAS',
+      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'MARGEM', 'ALERTAS', 'COBERTURA ESTOQUE (DIAS)', 'COBERTURA PEDIDO (DIAS)', 'ESTOQUE + PEDIDO (DIAS)',
     ]);
     const firstProduct = page.locator('#rows tr').first();
     const cells = await firstProduct.locator('td').allTextContents();
-    assert.equal(cells.length, 13);
+    assert.equal(cells.length, 16);
     assert.equal(cells[0], '384667');
     assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
     assert.equal(cells[9], '0');
