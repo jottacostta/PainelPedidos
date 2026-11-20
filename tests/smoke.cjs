@@ -130,6 +130,14 @@ async function checkBackupAndLogistics(page) {
   assert(!(await page.locator('#logisticsPrint').isVisible()));
   await page.emulateMedia({ media: 'screen' });
 
+  for (const [modo, host, coluna] of [['pendente','1730883','PENDENTE (CX)'], ['transito','602','EM TRÂNSITO (CX)']]) {
+    await page.locator('#logisticsPrintMode').selectOption(modo);
+    await page.locator('#printLogistics').click();
+    assert.deepEqual(await printRows.locator('td:first-child').allTextContents(), [host]);
+    assert.equal(await page.locator('#logisticsPrintHead th').last().textContent(), coluna);
+    assert.equal(await printRows.locator('td').count(), 5);
+    await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  }
   await page.getByText('Bases, matriz e backup', { exact: true }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#saveBtn').click();

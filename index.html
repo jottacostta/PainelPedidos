@@ -401,7 +401,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   <details class="panel logistics-panel no-print" id="logisticsPanel" open>
 <summary><h2>Acompanhamento de pedidos</h2></summary>
 <div class="support-content">
-<div class="panel-head logistics-actions"><button id="printLogistics" class="good" type="button">Imprimir acompanhamento</button></div>
+<div class="panel-head logistics-actions"><label>Imprimir <select id="logisticsPrintMode"><option value="todos">Pendentes e em trânsito</option><option value="pendente">Somente pendentes</option><option value="transito">Somente em trânsito</option></select></label><button id="printLogistics" class="good" type="button">Imprimir acompanhamento</button></div>
 <p class="small">Tabela independente da lista de produtos. Exibe apenas itens com quantidade pendente ou em trânsito maior que zero, conforme o ERP importado. A busca e os filtros de pasta, fornecedor e curva ABC também se aplicam. Pedidos em acompanhamento aparecem mesmo com o pedido final zerado ou negativo.</p>
 <div class="logistics-summary"><span id="pendingSummary">Pedidos pendentes: 0 itens / 0 caixas</span><span id="transitSummary">Em trânsito: 0 itens / 0 caixas</span></div>
 <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de pedidos pendentes e em trânsito"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>FORNECEDOR</th><th>PASTA</th><th>PEDIDO PENDENTE (CX)</th><th>EM TRÂNSITO (CX)</th></tr></thead><tbody id="logisticsRows"><tr><td colspan="6">Importe o ERP para consultar pedidos pendentes e em trânsito.</td></tr></tbody></table></div>
@@ -438,7 +438,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <h1>JBS REPOSIÇÃO — ACOMPANHAMENTO DE PEDIDOS</h1>
 <div id="logisticsPrintInfo"></div>
 <div id="logisticsPrintTotals"></div>
-<table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>FORNECEDOR</th><th>PASTA</th><th>PENDENTE (CX)</th><th>EM TRÂNSITO (CX)</th></tr></thead><tbody id="logisticsPrintRows"></tbody></table>
+<table><thead><tr id="logisticsPrintHead"></tr></thead><tbody id="logisticsPrintRows"></tbody></table>
 </section>
 
   <div class="support-grid">
@@ -989,11 +989,21 @@ $("saveManualEdit").onclick=()=>{const raw=$("manualEditValue").value,value=Numb
 $("exportBtn").onclick=csv;
 $("printLogistics").onclick=()=>{
  if(!state.products.length){notice("Importe o relatório ERP antes de imprimir o acompanhamento.","error");return}
- const items=produtosEmAcompanhamento().sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
- if(!items.length){notice("Nenhum pedido pendente ou em trânsito para imprimir com os filtros atuais.","error");return}
- $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td>${fmt.format(pendenteUsado(p))}</td><td>${fmt.format(transitoUsado(p))}</td></tr>`).join("");
- $("logisticsPrintInfo").textContent=`Data: ${new Date().toLocaleString("pt-BR")} | Registros: ${fmt.format(items.length)} | Fornecedor: ${state.supplier||"TODOS"} | Pasta: ${state.folder||"TODAS"}`;
- $("logisticsPrintTotals").textContent=`Pendentes: ${fmt.format(items.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(items.reduce((v,p)=>v+Math.max(0,pendenteUsado(p)),0))} caixas | Em trânsito: ${fmt.format(items.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(items.reduce((v,p)=>v+Math.max(0,transitoUsado(p)),0))} caixas`;
+ const seletor=$("logisticsPrintMode");
+ const colunas=[
+  {tipo:"pendente",titulo:"PENDENTE (CX)",resumo:"Pendentes",quantidade:pendenteUsado},
+  {tipo:"transito",titulo:"EM TRÂNSITO (CX)",resumo:"Em trânsito",quantidade:transitoUsado}
+ ].filter(c=>seletor.value==="todos"||seletor.value===c.tipo);
+ const items=produtosEmAcompanhamento().filter(p=>colunas.some(c=>c.quantidade(p)>0))
+  .sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
+ if(!items.length){notice("Nenhum pedido para imprimir com a seleção atual.","error");return}
+ $("logisticsPrintHead").innerHTML=["HOST","DESCRIÇÃO","FORNECEDOR","PASTA",...colunas.map(c=>c.titulo)].map(t=>`<th>${t}</th>`).join("");
+ $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td>${colunas.map(c=>`<td>${fmt.format(c.quantidade(p))}</td>`).join("")}</tr>`).join("");
+ $("logisticsPrintInfo").textContent=`${seletor.selectedOptions[0].textContent} | Data: ${new Date().toLocaleString("pt-BR")} | Registros: ${fmt.format(items.length)} | Fornecedor: ${state.supplier||"TODOS"} | Pasta: ${state.filter||"TODAS"}`;
+ $("logisticsPrintTotals").textContent=colunas.map(c=>{
+  const positivos=items.map(p=>c.quantidade(p)).filter(q=>q>0);
+  return `${c.resumo}: ${fmt.format(positivos.length)} itens / ${fmt.format(positivos.reduce((s,q)=>s+q,0))} caixas`;
+ }).join(" | ");
  document.body.classList.add("print-logistics");
  window.print();
 };
