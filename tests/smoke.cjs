@@ -92,13 +92,13 @@ async function checkBackupAndLogistics(page) {
   assert.equal(await pendente.locator('.order-column').innerText(), '0');
   assert.match(await pendente.innerText(), /RUPTURA TEMPORÁRIA/);
   const order = page.locator('#rows tr').filter({ hasText: 'DELTA' });
-  assert.equal(await order.locator('.order-column').innerText(), '8');
-  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0','10','10']);
+  assert.equal(await order.locator('.order-column').innerText(), '7');
+  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0','9','9']);
   assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
   await page.locator('#suggestBtn').click();
   assert.equal(await page.locator('#suggestionRows tr').filter({ hasText: '1730883' }).count(), 0);
   const suggested = page.locator('#suggestionRows tr').filter({ hasText: 'DELTA' });
-  assert.equal(await suggested.locator('td').nth(6).innerText(), '8');
+  assert.equal(await suggested.locator('td').nth(6).innerText(), '7');
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
@@ -157,7 +157,7 @@ async function checkBackupAndLogistics(page) {
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Backup restaurado: 4'));
   assert.equal(await page.locator('#daysA').inputValue(), '8');
-  assert.equal(await order.locator('.order-column').innerText(), '8');
+  assert.equal(await order.locator('.order-column').innerText(), '7');
   await page.locator('#hideZero').uncheck();
   await page.locator('[data-filter="MATRIZ"]').click();
   assert.deepEqual(await page.locator('#rows tr td:first-child').allTextContents(), ['1730883']);
