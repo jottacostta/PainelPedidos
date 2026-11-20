@@ -93,7 +93,7 @@ async function checkBackupAndLogistics(page) {
   assert.match(await pendente.innerText(), /RUPTURA TEMPORÁRIA/);
   const order = page.locator('#rows tr').filter({ hasText: 'DELTA' });
   assert.equal(await order.locator('.order-column').innerText(), '8');
-  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0,00','10,00','10,00']);
+  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0','10','10']);
   assert.doesNotMatch(await order.locator('.product-alerts').innerText(), /SEM PART GON/);
   await page.locator('#suggestBtn').click();
   assert.equal(await page.locator('#suggestionRows tr').filter({ hasText: '1730883' }).count(), 0);
@@ -102,7 +102,7 @@ async function checkBackupAndLogistics(page) {
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
-  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0,00','3,75','3,75']);
+  assert.deepEqual((await order.locator('td').allTextContents()).slice(-3), ['0','4','4']);
   await page.locator('#search').fill('DELTA');
   await page.evaluate(() => {
     window.print = () => {
@@ -732,6 +732,12 @@ async function checkViewport(browser, width) {
       await checkExcesso(page);
       await checkERPFields(page);
       await checkOfflineDownload(page);
+      await page.locator('#daysA').evaluate(el=>el.closest('details').open=true);
+      for(const [id,valor] of [['daysA','9'],['daysB','12'],['daysC','17']])await page.locator('#'+id).fill(valor);
+      await page.locator('#period').selectOption('45');
+      await page.locator('#applyParams').click();
+      await page.reload();
+      for(const [id,valor] of [['daysA','9'],['daysB','12'],['daysC','17'],['period','45']])assert.equal(await page.locator('#'+id).inputValue(),valor);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
     console.log('PASS viewport', width, 'ERP import, ABC filters, panel geometry and CPD print layout');

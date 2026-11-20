@@ -500,7 +500,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <details><summary>Cobertura, gôndola e pulmão</summary><p>Cobertura em caixas = média diária × dias da curva. Os padrões ajustáveis são A = 7, B = 10 e C = 14 dias. Some mais dois dias de média para exposição e pulmão, um para cada.</p></details>
 <details><summary>Pedido final</summary><p>Da cobertura somada à exposição e ao pulmão, subtraia estoque da loja em caixas, pendências (153) e trânsito (154). Cada campo logístico desativado entra como zero. No exemplo de 1 caixa/dia, um item A com 3 caixas na loja, 1 pendente e 2 em trânsito pede 7 + 2 − 3 − 1 − 2 = 3 caixas.</p></details>
 <details><summary>Pedido mínimo e arredondamento</summary><p>Com venda e estoque da loja zerados, o pedido principal é 1 caixa mais a área de venda. Sem pendências nem trânsito, com embalagem diferente de 1 unidade, estoque abaixo de meia caixa e pedido menor que 1, o mínimo é 1 caixa. O arredondamento afasta o valor de zero: 2,2 vira 3 e −2,2 vira −3.</p></details>
-<details><summary>Cobertura do estoque e do pedido em dias</summary><p>Dividimos as caixas disponíveis, as caixas do pedido final ou a soma das duas pela venda média diária em caixas no período selecionado. A projeção considera recebimento imediato e exclui pendências e trânsito. Saldos negativos e pedidos negativos contam como zero caixa disponível ou a receber. A edição do pedido atualiza os dias. Sem venda no período, a cobertura é indeterminada.</p></details>
+<details><summary>Cobertura do estoque e do pedido em dias</summary><p>Dividimos as caixas disponíveis, as caixas do pedido final ou a soma das duas pela venda média diária em caixas no período selecionado. A projeção considera recebimento imediato e exclui pendências e trânsito. Saldos negativos e pedidos negativos contam como zero caixa disponível ou a receber. Os dias são arredondados ao inteiro mais próximo. A edição do pedido atualiza os dias. Sem venda no período, a cobertura é indeterminada.</p></details>
 <details><summary>Ruptura e prioridade</summary><p>Com o campo 164 ativo, CD zerado bloqueia o pedido. CD CX igual a -*- sempre zera o pedido. Com o campo 153 ativo, qualquer quantidade pendente positiva também zera o pedido final para evitar duplicidade. A opção de ruptura altera apenas a situação exibida. Com CD CX positivo e estoque da loja zero ou negativo, a situação é RUPTURA TEMPORÁRIA se houver caixas pendentes ou em trânsito. Sem reposição pendente ou em trânsito, a situação é FALTA. Ambas entram na contagem e no filtro de rupturas. FALTA também identifica estoque da loja até 6 unidades sem pendência ou trânsito. Até 12 unidades, a prioridade é A-PRIORIDADE. Acima disso, venda zero gera B-SEM VDA.</p></details>
 <details><summary>Excedente e sugestão</summary><p>Pedido negativo indica excedente. Seus dias equivalentes são o valor absoluto do pedido final dividido pela média diária positiva. A sugestão usa o pedido final positivo, inclusive ajuste manual. Pedido negativo, cálculo indisponível ou ausência de cadastro MIX geram sugestão zero.</p></details>
 <details><summary>Custos, margem e valor do pedido</summary><p>Com o campo 003 ativo, custo de venda positivo e caixas vendidas válidas, o valor por caixa é custo da venda ÷ caixas vendidas. Nos demais casos usa o valor da caixa do MIX. Valor do pedido = caixas sugeridas × valor por caixa. Com 001 e 003 ativos e venda em reais positiva, margem (%) = 100 × (valor da venda − custo da venda) ÷ valor da venda.</p></details>
@@ -728,7 +728,7 @@ function parseERP(file){return file.arrayBuffer().then(buf=>{const text=new Text
 function semEstoqueCD(p){return campoAtivo("f164")&&p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0&&!(p.cdNaoInformado&&campoAtivo("f164x"))}
 function emRuptura(p){return p.situacao==="FALTA"||p.situacao==="RUPTURA TEMPORÁRIA"||p.situacao==="RUPTURA CD"}
 function pedidoBloqueado(p){return p.cdNaoInformado===true||semEstoqueCD(p)||pendenteUsado(p)>0}
-const diasCoberturaFmt=new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const diasCoberturaFmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
 function celulasCobertura(p){
  const media=p.mediaVendaCxDia;
  const pedido=pedidoFinalAtual(p);
@@ -952,7 +952,38 @@ function toggleRuptureFilter(){state.onlyRupture=!state.onlyRupture;state.page=0
 $("ruptureKpi").onclick=toggleRuptureFilter;
 $("ruptureKpi").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleRuptureFilter()}};
 $("prev").onclick=()=>{state.page=Math.max(0,state.page-1);render()};$("next").onclick=()=>{state.page++;render()};
-$("applyParams").onclick=async()=>{state.config={...state.config,diasA:num($("daysA").value),diasB:num($("daysB").value),diasC:num($("daysC").value),periodoVenda:Math.max(1,num($("period").value))};state.products.forEach(calc);limparSugestoes();render();try{await save()}catch(e){}notice("Parâmetros aplicados e produtos recalculados.","ok")};
+const chaveParametrosCobertura="PainelPedidos:parametrosCobertura";
+function mostrarParametrosCobertura(){
+ $("daysA").value=state.config.diasA;$("daysB").value=state.config.diasB;$("daysC").value=state.config.diasC;const periodo=String(state.config.periodoVenda);if(!Array.from($("period").options).some(o=>o.value===periodo))$("period").add(new Option(periodo,periodo));$("period").value=periodo;
+}
+function restaurarParametrosCobertura(){
+ try{
+  const salvos=JSON.parse(localStorage.getItem(chaveParametrosCobertura));
+  for(const chave of ["diasA","diasB","diasC","periodoVenda"]){
+   if(Number.isSafeInteger(salvos?.[chave])&&salvos[chave]>0)state.config[chave]=salvos[chave];
+  }
+ }catch{}
+ mostrarParametrosCobertura();
+}
+$("applyParams").onclick=async()=>{
+ const campos=[$("daysA"),$("daysB"),$("daysC")];
+ for(const campo of campos){
+  if(!campo.reportValidity()||!Number.isSafeInteger(campo.valueAsNumber)){
+   notice("Informe dias inteiros positivos para as três curvas.","error");
+   campo.focus();
+   return;
+  }
+ }
+ const parametros={diasA:campos[0].valueAsNumber,diasB:campos[1].valueAsNumber,diasC:campos[2].valueAsNumber,periodoVenda:Number($("period").value)};
+ state.config={...state.config,...parametros};
+ let gravado=true;
+ try{localStorage.setItem(chaveParametrosCobertura,JSON.stringify(parametros))}catch{gravado=false}
+ state.products.forEach(calc);
+ limparSugestoes();
+ render();
+ try{await save()}catch{}
+ notice(gravado?"Parâmetros salvos neste navegador e produtos recalculados.":"Produtos recalculados. O navegador não permitiu salvar os parâmetros.",gravado?"ok":"error");
+};
 $("rows").addEventListener("click",e=>{const b=e.target.closest("[data-edit-code]");if(!b)return;const p=produtosComCurvaDoGrupo().find(x=>x.codigo===b.dataset.editCode);if(!p||pedidoBloqueado(p))return;state.editingCode=p.codigo;$("manualEditProduct").textContent=`${p.codigo} · ${p.descricao}`;$("manualEditValue").value=pedidoFinalAtual(p)??0;abrirCalc(p);$("manualEditModal").classList.add("open");$("manualEditValue").focus();$("manualEditValue").select()});
 // Calculadora do pedido: avalia + − × ÷ e parênteses sem eval; vírgula é o separador decimal.
 const calc$={expr:""};
@@ -1035,9 +1066,9 @@ window.addEventListener("beforeprint",()=>{
 function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td></tr>`).join("")||'<tr><td colspan="9">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
 $("suggestBtn").onclick=renderSugestoes;
 $("saveBtn").onclick=()=>{const backup={version:1,createdAt:new Date().toISOString(),products:state.products,config:state.config,matrix:[...state.matrix]};download(new Blob([JSON.stringify(backup)],{type:"application/json"}),"JBS_BACKUP_LOCAL.json");notice("Backup JSON baixado para o aparelho.","ok")};
-$("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.products.forEach(aplicarPastaSalva);state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);$("daysA").value=state.config.diasA;$("daysB").value=state.config.diasB;$("daysC").value=state.config.diasC;const periodo=String(state.config.periodoVenda);if(!Array.from($("period").options).some(o=>o.value===periodo))$("period").add(new Option(periodo,periodo));$("period").value=periodo;state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
+$("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.products.forEach(aplicarPastaSalva);state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);mostrarParametrosCobertura();state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
 $("clearBtn").onclick=async()=>{if(!confirm("Apagar os produtos processados deste aparelho?"))return;state.products=[];state.manualOrders={};state.diagnostics=null;state.colunasERP=new Set();try{const db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction("data","readwrite");tx.objectStore("data").clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}catch(e){}$("diagnostics").innerHTML="";$("rows").innerHTML='<tr><td colspan="16">Importe o ERP para começar.</td></tr>';$("suggestions").classList.add("hidden");state.page=0;render();notice("Dados processados limpos. As bases incorporadas permanecem disponíveis.","ok")};
-async function start(){try{const base=await decompressBase();state.mix=base.mix;notice(`Bases internas carregadas: MIX ${fmt.format(state.mix.length)}. Aplicação pronta para importar ERP. Nenhum dado anterior foi restaurado.`,"ok");if("indexedDB" in window){const req=indexedDB.deleteDatabase(DB);req.onerror=()=>console.warn("Não foi possível limpar o armazenamento local antigo.");req.onblocked=()=>console.warn("Feche outras abas da aplicação para concluir a limpeza do armazenamento antigo.")}}catch(e){notice("Falha ao carregar as bases incorporadas: "+e.message,"error")}}
+async function start(){restaurarParametrosCobertura();try{const base=await decompressBase();state.mix=base.mix;notice(`Bases internas carregadas: MIX ${fmt.format(state.mix.length)}. Aplicação pronta para importar ERP. Importe os produtos para iniciar.`,"ok");if("indexedDB" in window){const req=indexedDB.deleteDatabase(DB);req.onerror=()=>console.warn("Não foi possível limpar o armazenamento local antigo.");req.onblocked=()=>console.warn("Feche outras abas da aplicação para concluir a limpeza do armazenamento antigo.")}}catch(e){notice("Falha ao carregar as bases incorporadas: "+e.message,"error")}}
 // Move keyboard and visual focus to the result once the existing action renders it.
 $("suggestBtn").addEventListener("click", () => $("suggestionsTitle").focus());
 $("openCalcHelp").onclick=()=>$("helpCalculations").showModal();
