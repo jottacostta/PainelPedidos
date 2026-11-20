@@ -411,7 +411,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <details class="panel no-print" id="excessoPanel">
 <summary><h2>Excesso de estoque por curva ABC</h2></summary>
 <div class="support-content">
-<p>Estoque físico da loja. A cobertura é o estoque dividido pela venda média diária. O excesso em caixas é a quantidade acima da cobertura da curva mais dois dias de exposição e pulmão.</p>
+<p>Estoque físico da loja. A cobertura é o estoque dividido pela venda média diária. O excesso em caixas é a quantidade acima da meta total da curva, que já inclui exposição e pulmão.</p>
 <p class="print-heading" id="excessoContexto"></p>
 <div class="supplier-filter no-print">
 <label>Linhas a imprimir <input id="excessoLinhasImprimir" type="number" min="1" step="1" placeholder="Todas"></label>
@@ -497,8 +497,8 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <details open><summary>Venda e estoque em caixas</summary><p>Divida as unidades vendidas ou em estoque pelas unidades por caixa. O painel lê a embalagem nos campos 153 ou 154 do ERP. Embalagens ausentes ou divergentes impedem o cálculo automático.</p></details>
 <details><summary>Venda média diária</summary><p>Caixas vendidas ÷ dias do relatório. O período padrão é 30 dias. Em 30 dias, 360 unidades com 12 por caixa representam 30 caixas vendidas e média de 1 caixa por dia.</p></details>
 <details><summary>Curva ABC</summary><p>O painel ordena os HOSTs pela contribuição no grupo filtrado. Com o campo 001 ativo, usa o faturamento. Nos demais casos, usa caixas vendidas. A classe A inclui o item que alcança 80% do acumulado, B segue até 95% e C reúne o restante. Alterar o fornecedor ou filtro operacional pode mudar a curva e o pedido.</p></details>
-<details><summary>Cobertura, gôndola e pulmão</summary><p>Cobertura em caixas = média diária × dias da curva. Os padrões ajustáveis são A = 7, B = 10 e C = 14 dias. Some mais dois dias de média para exposição e pulmão, um para cada.</p></details>
-<details><summary>Pedido final</summary><p>Da cobertura somada à exposição e ao pulmão, subtraia estoque da loja em caixas, pendências (153) e trânsito (154). Cada campo logístico desativado entra como zero. No exemplo de 1 caixa/dia, um item A com 3 caixas na loja, 1 pendente e 2 em trânsito pede 7 + 2 − 3 − 1 − 2 = 3 caixas.</p></details>
+<details><summary>Cobertura, gôndola e pulmão</summary><p>Cobertura em caixas = média diária × dias da curva. Os padrões ajustáveis são A = 7, B = 10 e C = 14 dias. A meta já inclui a área de vendas e o pulmão.</p></details>
+<details><summary>Pedido final</summary><p>Da meta total da curva, subtraia estoque da loja em caixas, pendências (153) e trânsito (154). Cada campo logístico desativado entra como zero. No exemplo de 1 caixa/dia, um item A com 3 caixas na loja, sem pendências e com 2 caixas em trânsito pede 7 − 3 − 2 = 2 caixas.</p></details>
 <details><summary>Pedido mínimo e arredondamento</summary><p>Com venda e estoque da loja zerados, o pedido principal é 1 caixa mais a área de venda. Sem pendências nem trânsito, com embalagem diferente de 1 unidade, estoque abaixo de meia caixa e pedido menor que 1, o mínimo é 1 caixa. O arredondamento afasta o valor de zero: 2,2 vira 3 e −2,2 vira −3.</p></details>
 <details><summary>Cobertura do estoque e do pedido em dias</summary><p>Dividimos as caixas disponíveis, as caixas do pedido final ou a soma das duas pela venda média diária em caixas no período selecionado. A projeção considera recebimento imediato e exclui pendências e trânsito. Saldos negativos e pedidos negativos contam como zero caixa disponível ou a receber. Os dias são arredondados ao inteiro mais próximo. A edição do pedido atualiza os dias. Sem venda no período, a cobertura é indeterminada.</p></details>
 <details><summary>Ruptura e prioridade</summary><p>Com o campo 164 ativo, CD zerado bloqueia o pedido. CD CX igual a -*- sempre zera o pedido. Com o campo 153 ativo, qualquer quantidade pendente positiva também zera o pedido final para evitar duplicidade. A opção de ruptura altera apenas a situação exibida. Com CD CX positivo e estoque da loja zero ou negativo, a situação é RUPTURA TEMPORÁRIA se houver caixas pendentes ou em trânsito. Sem reposição pendente ou em trânsito, a situação é FALTA. Ambas entram na contagem e no filtro de rupturas. FALTA também identifica estoque da loja até 6 unidades sem pendência ou trânsito. Até 12 unidades, a prioridade é A-PRIORIDADE. Acima disso, venda zero gera B-SEM VDA.</p></details>
@@ -684,7 +684,7 @@ function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidad
  const cobertura=valid?avg*days:0;
  const area=(avg??0)*2;
  p.areaVenda=area;
- p.necessidadeCaixa=cobertura+area;
+ p.necessidadeCaixa=cobertura;
  const rupturaCD = semEstoqueCD(p);
  const bloqueado = pedidoBloqueado(p);
  const faltaComCD=estoque<=0&&campoAtivo("f164")&&num(p.estoqueCDCaixa)>0;
@@ -692,7 +692,7 @@ function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidad
  else if(faltaComCD&&(pend>0||trans>0))p.situacao="RUPTURA TEMPORÁRIA";
  else p.situacao=(faltaComCD||(estoque<=6&&pend===0&&trans===0))?"FALTA":"";
  p.prioridade=estoque<=12?"A-PRIORIDADE":venda===0?"B-SEM VDA":"";
- p.pedidoPrincipal=bloqueado?0:!valid?null:((venda===0&&venda+estoque===0)?1+area:cobertura-stock-trans-pend+area);
+ p.pedidoPrincipal=bloqueado?0:!valid?null:((venda===0&&venda+estoque===0)?1:p.necessidadeCaixa-stock-trans-pend);
  p.pedido=bloqueado?0:p.pedidoPrincipal==null?null:((pend===0&&trans===0&&cx!==1&&p.pedidoPrincipal<1&&estoque<cx/2)?1:p.pedidoPrincipal);
  p.pedidoFinalArredondado=p.pedido==null?null:(p.pedido>0?Math.ceil(p.pedido):p.pedido<0?Math.floor(p.pedido):0);
  const critical=p.alertasCadastro.includes("SEM CADASTRO MIX")||p.alertasCadastro.includes("QUANTIDADE POR CAIXA INVÁLIDA");
