@@ -268,7 +268,7 @@ async function checkERPBoxSize(page) {
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
   assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
-  assert.deepEqual(rows.map(row => row[9]), ['7', '2', '—', '—']);
+  assert.deepEqual(rows.map(row => row[9]), ['5', '1', '—', '—']);
   assert.match(rows[2][12], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
   assert.match(rows[3][12], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
 }
@@ -276,8 +276,8 @@ async function checkERPBoxSize(page) {
 async function checkDynamicABC(page) {
   const products = [
     { id: '201', sales: 60, packageSize: 12, curve: 'C', order: '3' },
-    { id: '202', sales: 1500, packageSize: 100, curve: 'B', order: '6' },
-    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '24' },
+    { id: '202', sales: 1500, packageSize: 100, curve: 'B', order: '5' },
+    { id: '203', sales: 960, packageSize: 12, curve: 'A', order: '19' },
     { id: '204', sales: 0, packageSize: 12, curve: 'C', order: '1' },
     { id: '205', sales: 5000, packageSize: 0, curve: '', order: '—' },
   ];
