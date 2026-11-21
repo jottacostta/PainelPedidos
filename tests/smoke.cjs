@@ -741,7 +741,7 @@ async function checkViewport(browser, width) {
     await page.locator('#hideZero').uncheck();
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
     assert.deepEqual(await page.locator('#products th').allTextContents(), [
-      'HOST', 'DESCRIÇÃO', 'VENDA', 'ESTOQUE UN', 'CD CX', 'SITUAÇÃO',
+      'HOST', 'DESCRIÇÃO', 'VENDA (UN/Kg)', 'ESTOQUE (UN/Kg)', 'CD (Kg/Cx)', 'SITUAÇÃO',
       'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'MARGEM', 'ALERTAS', 'COBERTURA ESTOQUE (DIAS)', 'COBERTURA PEDIDO (DIAS)', 'ESTOQUE + PEDIDO (DIAS)',
     ]);
     const firstProduct = page.locator('#rows tr').first();
