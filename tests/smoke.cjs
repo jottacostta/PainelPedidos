@@ -599,6 +599,13 @@ async function checkFaltaEPasta(page) {
     name: 'pasta.js', mimeType: 'text/javascript',
     buffer: Buffer.from('window.PASTAS_POR_HOST = {"900100":"LIMPEZA","900101":"BEBIDAS"};'),
   });
+  await page.waitForFunction(() => document.querySelector('#estadoPastas').textContent.includes('2 HOST(s)'));
+  assert.equal(await page.locator('#importarPastas').evaluate(input => input.files[0].name), 'pasta.js');
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
+  assert.match(await page.locator('#estadoPastas').textContent(), /pasta\.js.*2 HOST.*Última importação salva/);
+  await page.locator('#hideZero').uncheck();
+  await page.locator('#hideNegative').uncheck();
   await page.locator('#erpFile').setInputFiles(path.join(__dirname, 'pastas.xlsx'));
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 2'));
   assert.equal(await pasta.inputValue(), 'LIMPEZA');
