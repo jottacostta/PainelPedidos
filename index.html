@@ -443,7 +443,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 </section>
 
   <div class="support-grid">
-    <details class="panel support-panel params-panel">
+    <details id="painelParametros" class="panel support-panel params-panel">
       <summary>Parâmetros de cobertura</summary>
       <div class="support-content"><div class="params params-grid">
 <label class="param-field"><span>ABC A</span><span class="param-value"><input id="daysA" type="number" min="1" value="7"><small>dias</small></span></label>
@@ -1066,6 +1066,34 @@ const chaveParametrosCobertura="PainelPedidos:parametrosCobertura";
 function mostrarParametrosCobertura(){
  $("daysA").value=state.config.diasA;$("daysB").value=state.config.diasB;$("daysC").value=state.config.diasC;const periodo=String(state.config.periodoVenda);if(!Array.from($("period").options).some(o=>o.value===periodo))$("period").add(new Option(periodo,periodo));$("period").value=periodo;
 }
+const camposCobertura={daysA:"diasA",daysB:"diasB",daysC:"diasC",period:"periodoVenda"};
+function salvarCobertura(){
+ const valores={};
+ for(const chave of Object.values(camposCobertura))valores[chave]=state.config[chave];
+ try{localStorage.setItem(chaveParametrosCobertura,JSON.stringify(valores));return true}catch{return false}
+}
+function atualizarCalculosCobertura(){
+ curvaGrupoCache=undefined;
+ state.products.forEach(calc);
+ limparSugestoes();
+ render();
+}
+for(const [id,chave] of Object.entries(camposCobertura)){
+ const campo=$(id);
+ campo.addEventListener(id==="period"?"change":"input",()=>{
+  const valor=Number(campo.value);
+  if(!Number.isSafeInteger(valor)||valor<1||!campo.validity.valid)return;
+  state.config[chave]=valor;
+  const salvo=salvarCobertura();
+  atualizarCalculosCobertura();
+  if(!salvo)notice("Parâmetro aplicado nesta sessão. O navegador bloqueou a gravação.","error");
+ });
+}
+const painelParametros=$("painelParametros");
+try{painelParametros.open=localStorage.getItem(chaveParametrosCobertura+":aberto")==="true"}catch{}
+painelParametros.addEventListener("toggle",()=>{
+ try{localStorage.setItem(chaveParametrosCobertura+":aberto",String(painelParametros.open))}catch{}
+});
 function restaurarParametrosCobertura(){
  try{
   const salvos=JSON.parse(localStorage.getItem(chaveParametrosCobertura));
@@ -1086,11 +1114,8 @@ $("applyParams").onclick=async()=>{
  }
  const parametros={diasA:campos[0].valueAsNumber,diasB:campos[1].valueAsNumber,diasC:campos[2].valueAsNumber,periodoVenda:Number($("period").value)};
  state.config={...state.config,...parametros};
- let gravado=true;
- try{localStorage.setItem(chaveParametrosCobertura,JSON.stringify(parametros))}catch{gravado=false}
- state.products.forEach(calc);
- limparSugestoes();
- render();
+ const gravado=salvarCobertura();
+ atualizarCalculosCobertura();
  try{await save()}catch{}
  notice(gravado?"Parâmetros salvos neste navegador e produtos recalculados.":"Produtos recalculados. O navegador não permitiu salvar os parâmetros.",gravado?"ok":"error");
 };
@@ -1176,7 +1201,7 @@ window.addEventListener("beforeprint",()=>{
 function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td></tr>`).join("")||'<tr><td colspan="9">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
 $("suggestBtn").onclick=renderSugestoes;
 $("saveBtn").onclick=()=>{const backup={version:1,createdAt:new Date().toISOString(),products:state.products,config:state.config,matrix:[...state.matrix]};download(new Blob([JSON.stringify(backup)],{type:"application/json"}),"JBS_BACKUP_LOCAL.json");notice("Backup JSON baixado para o aparelho.","ok")};
-$("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.products.forEach(aplicarPastaSalva);state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);mostrarParametrosCobertura();state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
+$("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.products.forEach(aplicarPastaSalva);state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);mostrarParametrosCobertura();if(backup.config)salvarCobertura();state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
 $("clearBtn").onclick=async()=>{if(!confirm("Apagar os produtos processados deste aparelho?"))return;state.products=[];state.manualOrders={};state.diagnostics=null;state.colunasERP=new Set();try{const db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction("data","readwrite");tx.objectStore("data").clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}catch(e){}$("diagnostics").innerHTML="";$("rows").innerHTML='<tr><td colspan="16">Importe o ERP para começar.</td></tr>';$("suggestions").classList.add("hidden");state.page=0;render();notice("Dados processados limpos. As bases incorporadas permanecem disponíveis.","ok")};
 async function start(){restaurarParametrosCobertura();try{const base=await decompressBase();state.mix=base.mix;notice(`Bases internas carregadas: MIX ${fmt.format(state.mix.length)}. Aplicação pronta para importar ERP. Importe os produtos para iniciar.`,"ok");if("indexedDB" in window){const req=indexedDB.deleteDatabase(DB);req.onerror=()=>console.warn("Não foi possível limpar o armazenamento local antigo.");req.onblocked=()=>console.warn("Feche outras abas da aplicação para concluir a limpeza do armazenamento antigo.")}}catch(e){notice("Falha ao carregar as bases incorporadas: "+e.message,"error")}}
 // Move keyboard and visual focus to the result once the existing action renders it.

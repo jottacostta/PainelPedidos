@@ -775,8 +775,9 @@ async function checkViewport(browser, width) {
       await page.locator('#daysA').evaluate(el=>el.closest('details').open=true);
       for(const [id,valor] of [['daysA','9'],['daysB','12'],['daysC','17']])await page.locator('#'+id).fill(valor);
       await page.locator('#period').selectOption('45');
-      await page.locator('#applyParams').click();
+      await page.locator('#daysA').fill('0');
       await page.reload();
+      assert(await page.locator('#painelParametros').evaluate(el=>el.open));
       for(const [id,valor] of [['daysA','9'],['daysB','12'],['daysC','17'],['period','45']])assert.equal(await page.locator('#'+id).inputValue(),valor);
     }
     assert.deepEqual(errors, [], 'JavaScript errors');
