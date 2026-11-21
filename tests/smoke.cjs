@@ -577,7 +577,10 @@ async function checkFaltaEPasta(page) {
     const writer = await handle.createWritable();
     await writer.write('// início\nwindow.PASTAS_POR_HOST = {"777":"OUTRA"};\n// fim');
     await writer.close();
-    window.showOpenFilePicker = async () => [handle];
+    window.showOpenFilePicker = async (...args) => {
+      if (args[0]?.types?.length) throw Error('O seletor de pasta.js deve aceitar todos os tipos de arquivo.');
+      return [handle];
+    };
   });
   await page.locator('#vincularPastas').evaluate(button => button.click());
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('vinculado nesta sessão'));
@@ -591,6 +594,7 @@ async function checkFaltaEPasta(page) {
   assert.match(salvo, /"777": "OUTRA"/);
   assert.match(salvo, /"900100": "LIMPEZA"/);
   assert.match(salvo, /\/\/ fim$/);
+  assert.equal(await page.locator('#importarPastas').getAttribute('accept'), null);
   await page.locator('#importarPastas').setInputFiles({
     name: 'pasta.js', mimeType: 'text/javascript',
     buffer: Buffer.from('window.PASTAS_POR_HOST = {"900100":"LIMPEZA","900101":"BEBIDAS"};'),
