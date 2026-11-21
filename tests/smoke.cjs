@@ -370,6 +370,17 @@ async function checkInferredFolders(page) {
   const suggestions = await page.locator('#suggestionRows').innerText();
   assert.match(suggestions, /AMACIANTE COMFORT SEM PASTA/);
   assert.doesNotMatch(suggestions, /AMACIANTE COMFORT SEM MIX/);
+  await page.locator('#importarPastas').setInputFiles({
+    name:'pasta.js', mimeType:'text/javascript',
+    buffer:Buffer.from('window.PASTAS_POR_HOST = {"311":"PERFUMARIA"};'),
+  });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Cadastro de pastas importado'));
+  await page.locator('#suggestBtn').click();
+  assert.doesNotMatch(await page.locator('#suggestionRows').innerText(), /AMACIANTE COMFORT SEM MIX/);
+  await page.locator('[data-filter="PERFUMARIA"]').click();
+  await page.locator('#suggestBtn').click();
+  const hostsSugeridos = await page.locator('#suggestionRows tr td:nth-child(2)').allTextContents();
+  assert.deepEqual(hostsSugeridos,['311']);
 }
 
 async function checkScopedABC(page) {
