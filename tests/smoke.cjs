@@ -806,6 +806,28 @@ async function checkViewport(browser, width) {
     for (const width of [320, 390, 768, 1366, 1920]) {
       await checkViewport(browser, width);
     }
+    const page = await browser.newPage();
+    await page.goto('http://127.0.0.1:8765/');
+    await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases internas carregadas'));
+    const products = Array.from({length:120}, (_,i) => ({
+      codigo:String(900000+i), descricao:'Produto '+(i+1), vendaUnidade:30, estoqueLojaUnidade:0,
+      estoqueCDCaixa:20, quantidadeCaixa:1, pendenteCaixa:0, transitoCaixa:0, abc:'A',
+      pasta:'LIMPEZA', valorCaixa:10, alertasCadastro:[],
+    }));
+    await page.locator('#backupFile').setInputFiles({name:'pedido.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({products}))});
+    await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Backup restaurado'));
+    await page.locator('#suggestBtn').click();
+    assert.equal(await page.locator('#suggestionRows tr').count(),120);
+    const pdf = await page.pdf({preferCSSPageSize:true});
+    const texto = require('node:child_process').execFileSync('pdftotext',['-layout','-','-'],{input:pdf,encoding:'utf8'});
+    const folhas = texto.split('\f').filter(folha => folha.trim());
+    assert(folhas.length >= 3);
+    for(const folha of folhas){
+      assert.equal(folha.match(/Responsável pela conferência/g)?.length,1);
+      assert.equal(folha.match(/Digitado no CPD por/g)?.length,1);
+      assert(folha.lastIndexOf('Produto ') < folha.indexOf('Responsável pela conferência'));
+    }
+    await page.close();
   } finally {
     await browser.close();
   }
