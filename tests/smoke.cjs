@@ -267,7 +267,7 @@ async function checkERPBoxSize(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
-  assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
+  assert.deepEqual(rows.map(row => row[7]), ['12 Cx', '24 Cx', '0', '0']);
   assert.deepEqual(rows.map(row => row[9]), ['5', '1', '—', '—']);
   assert.match(rows[2][12], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
   assert.match(rows[3][12], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
@@ -747,6 +747,7 @@ async function checkViewport(browser, width) {
     const cells = await firstProduct.locator('td').allTextContents();
     assert.equal(cells.length, 16);
     assert.equal(cells[0], '384667');
+    assert.equal(cells[7], '1 Kg');
     assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
     assert.equal(cells[9], '0');
     assert.equal(await firstProduct.locator('td:nth-child(10).order-column').count(), 1);
