@@ -570,6 +570,35 @@ async function checkFaltaEPasta(page) {
   assert.equal(await pasta.inputValue(), 'BEBIDAS');
   await carregar();
   assert.equal(await pasta.inputValue(), 'BEBIDAS');
+  assert.equal(await page.locator('head script[src="pasta.js"]').count(), 1);
+  await page.evaluate(async () => {
+    const dir = await navigator.storage.getDirectory();
+    const handle = await dir.getFileHandle('pasta.js', {create:true});
+    const writer = await handle.createWritable();
+    await writer.write('// início\nwindow.PASTAS_POR_HOST = {"777":"OUTRA"};\n// fim');
+    await writer.close();
+    window.showOpenFilePicker = async () => [handle];
+  });
+  await page.locator('#vincularPastas').evaluate(button => button.click());
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('vinculado nesta sessão'));
+  await pasta.selectOption('LIMPEZA');
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('pasta.js atualizado'));
+  const salvo = await page.evaluate(async () => {
+    const dir = await navigator.storage.getDirectory();
+    return (await (await dir.getFileHandle('pasta.js')).getFile()).text();
+  });
+  assert.match(salvo, /^\/\/ início/);
+  assert.match(salvo, /"777": "OUTRA"/);
+  assert.match(salvo, /"900100": "LIMPEZA"/);
+  assert.match(salvo, /\/\/ fim$/);
+  await page.locator('#importarPastas').setInputFiles({
+    name: 'pasta.js', mimeType: 'text/javascript',
+    buffer: Buffer.from('window.PASTAS_POR_HOST = {"900100":"LIMPEZA","900101":"BEBIDAS"};'),
+  });
+  await page.locator('#erpFile').setInputFiles(path.join(__dirname, 'pastas.xlsx'));
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 2'));
+  assert.equal(await pasta.inputValue(), 'LIMPEZA');
+  assert.equal(await page.locator('#rows tr').filter({hasText:'900101'}).locator('td').nth(6).innerText(), 'ERP OFICIAL');
 }
 
 async function checkExcesso(page) {
