@@ -99,6 +99,7 @@ async function checkBackupAndLogistics(page) {
   assert.equal(await page.locator('#suggestionRows tr').filter({ hasText: '1730883' }).count(), 0);
   const suggested = page.locator('#suggestionRows tr').filter({ hasText: 'DELTA' });
   assert.equal(await suggested.locator('td').nth(6).innerText(), '7');
+  assert.equal(await suggested.locator('td').last().innerText(), 'Kg');
   await order.locator('[data-edit-code]').click();
   await page.locator('#manualEditValue').fill('3');
   await page.locator('#saveManualEdit').click();
@@ -117,8 +118,8 @@ async function checkBackupAndLogistics(page) {
   await page.locator('#hideZero').check();
   await page.locator('#supplierFilter').selectOption('ALFA');
   assert.equal(await page.locator('#logisticsRows tr').count(), 2);
-  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 1 itens / 1 caixas');
-  assert.equal(await page.locator('#transitSummary').innerText(), 'Em trânsito: 1 itens / 3 caixas');
+  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 1 itens / 1 Cx');
+  assert.equal(await page.locator('#transitSummary').innerText(), 'Em trânsito: 1 itens / 3 Kg');
   await page.evaluate(() => { window.print = () => { window.printRequested = true; }; });
   await page.locator('#printLogistics').click();
   assert.equal(await page.evaluate(() => window.printRequested), true);
@@ -127,12 +128,12 @@ async function checkBackupAndLogistics(page) {
   const printRows = page.locator('#logisticsPrintRows tr');
   assert.deepEqual(await printRows.locator('td:first-child').allTextContents(), ['602', '1730883']);
   assert.equal(await page.locator('#logisticsPrintTotals').innerText(),
-    'Pendentes: 1 itens / 1 caixas | Em trânsito: 1 itens / 3 caixas');
+    'Pendentes: 1 itens / 1 Cx | Em trânsito: 1 itens / 3 Kg');
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   assert(!(await page.locator('#logisticsPrint').isVisible()));
   await page.emulateMedia({ media: 'screen' });
 
-  for (const [modo, host, coluna] of [['pendente','1730883','PENDENTE (CX)'], ['transito','602','EM TRÂNSITO (CX)']]) {
+  for (const [modo, host, coluna] of [['pendente','1730883','PENDENTE (Kg/Cx)'], ['transito','602','EM TRÂNSITO (Kg/Cx)']]) {
     await page.locator('#logisticsPrintMode').selectOption(modo);
     await page.locator('#printLogistics').click();
     assert.deepEqual(await printRows.locator('td:first-child').allTextContents(), [host]);
@@ -216,7 +217,7 @@ async function checkRuptureCD(page) {
   assert.match(transitAlert, /ALERTA CADASTRAL EXISTENTE/);
   const stockAlert = await stock.locator('.product-alerts').innerText();
   assert.match(stockAlert, /estoque loja 2, pendentes 0, trânsito 0/);
-  assert.match(stockAlert, /Excedente de 2 cx equivale a 60 dias de venda/);
+  assert.match(stockAlert, /Excedente de 2 Cx equivale a 60 dias de venda/);
 
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportBtn').click();
@@ -224,11 +225,11 @@ async function checkRuptureCD(page) {
   const chunks = [];
   for await (const chunk of await download.createReadStream()) chunks.push(chunk);
   const csv = Buffer.concat(chunks).toString('utf8');
-  assert.match(csv, /Excedente de 2 cx equivale a 60 dias de venda/);
+  assert.match(csv, /Excedente de 2 Cx equivale a 60 dias de venda/);
   const blockedRow = csv.split('\r\n').find(line => line.startsWith('"01";'));
   assert(blockedRow);
   assert.deepEqual(blockedRow.split(';').slice(9, 13), ['"0"', '"0"', '"0"', '"0"']);
-  assert.match(csv, /PEDIDO NEGATIVO \(cx\): estoque loja 0,04, pendentes 0, trânsito 8/);
+  assert.match(csv, /PEDIDO NEGATIVO \(Cx\): estoque loja 0,04, pendentes 0, trânsito 8/);
 
   await page.locator('#suggestBtn').click();
   const suggestions = await page.locator('#suggestionRows').innerText();
@@ -267,7 +268,7 @@ async function checkERPBoxSize(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('ERP importado: 4'));
   const rows = await page.locator('#rows tr').evaluateAll(items =>
     items.map(row => Array.from(row.cells, cell => cell.textContent)));
-  assert.deepEqual(rows.map(row => row[7]), ['12', '24', '0', '0']);
+  assert.deepEqual(rows.map(row => row[7]), ['12 Cx', '24 Cx', '0', '0']);
   assert.deepEqual(rows.map(row => row[9]), ['5', '1', '—', '—']);
   assert.match(rows[2][12], /QUANTIDADE POR CAIXA DIVERGENTE NO ERP/);
   assert.match(rows[3][12], /QUANTIDADE POR CAIXA INVÁLIDA NO ERP/);
@@ -508,7 +509,7 @@ async function checkERPFields(page) {
   // 153 desmarcado: pendência zerada no cálculo e no acompanhamento.
   await field('f153').uncheck();
   assert.equal((await cells('701'))[9], '140');
-  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 0 itens / 0 caixas');
+  assert.equal(await page.locator('#pendingSummary').innerText(), 'Pedidos pendentes: 0 itens / 0');
   await field('f153').check();
   assert.equal((await cells('701'))[9], '0');
 
@@ -642,7 +643,7 @@ async function checkExcesso(page) {
   await rows.getByText('Sem venda no período', { exact: true }).waitFor();
   assert.equal(await rows.count(), 2);
   const totais=page.locator('#excessoTotais');
-  assert.match(await totais.innerText(), /58 cx.*5\.650,00/);
+  assert.match(await totais.innerText(), /58 Kg.*5\.650,00/);
   const hosts = () => rows.locator('td:first-child').allTextContents();
   for (const [ordem, esperado] of [
     ['az', ['101','103']], ['za', ['103','101']], ['cxDesc', ['101','103']],
@@ -655,19 +656,19 @@ async function checkExcesso(page) {
   await page.locator('#excessoLinhasImprimir').fill('1');
   await page.locator('#printExcesso').click();
   assert.deepEqual(await hosts(), ['101']);
-  assert.match(await totais.innerText(), /53 cx/);
+  assert.match(await totais.innerText(), /53 Kg/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   assert.deepEqual(await hosts(), ['101','103']);
   await page.locator('#excessoTodasLinhas').click();
   await page.locator('#printExcesso').click();
   assert.deepEqual(await hosts(), ['101','103']);
-  assert.match(await totais.innerText(), /58 cx/);
+  assert.match(await totais.innerText(), /58 Kg/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await page.locator('#excessoMinValor').fill('2700');
   assert.deepEqual(await hosts(), ['103']);
   await page.locator('#excessoMinCx').fill('6');
   assert.match(await rows.innerText(), /Nenhum produto/);
-  assert.match(await totais.innerText(), /0 cx.*0,00/);
+  assert.match(await totais.innerText(), /0.*0,00/);
   await page.locator('#excessoMinValor').fill('');
   assert.deepEqual(await hosts(), ['101']);
   await page.evaluate(() => { window.print = () => window.dispatchEvent(new Event('beforeprint')); });
@@ -675,9 +676,9 @@ async function checkExcesso(page) {
   await page.emulateMedia({ media: 'print' });
   assert(await rows.isVisible());
   assert(await totais.isVisible());
-  assert.match(await totais.innerText(), /53 cx.*2\.650,00/);
+  assert.match(await totais.innerText(), /53 Kg.*2\.650,00/);
   assert.deepEqual(await hosts(), ['101']);
-  assert.match(await page.locator('#excessoContexto').innerText(), /Excesso mínimo: 6 cx.*Menor valor do excesso/);
+  assert.match(await page.locator('#excessoContexto').innerText(), /Excesso mínimo: 6 Kg ou Cx.*Menor valor do excesso/);
   await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await page.emulateMedia({ media: 'screen' });
   const baixar=page.waitForEvent('download');
@@ -689,11 +690,11 @@ async function checkExcesso(page) {
   const registros=Buffer.concat(partes).toString('utf8').split('\r\n');
   assert.equal(registros.length,3);
   assert.match(registros[1], /^"101";"PRODUTO 101"/);
-  assert.match(registros[2], /"TOTAL".*"53";".*2\.650,00"/);
+  assert.match(registros[2], /"TOTAL".*"53 Kg";".*2\.650,00"/);
   await page.locator('#excessoMinCx').fill('');
   await page.locator('#excessoCurva').selectOption('A');
   assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1', '60', '53']);
-  assert.match(await rows.locator('td').last().innerText(), /2\.650,00/);
+  assert.match(await rows.locator('td').nth(7).innerText(), /2\.650,00/);
   assert.deepEqual(await page.locator('#period option').allTextContents(), ['15','30','45','60']);
   await page.locator('#excessoDias').fill('61');
   assert.match(await rows.innerText(), /Nenhum produto/);
@@ -740,13 +741,14 @@ async function checkViewport(browser, width) {
     await page.locator('#hideZero').uncheck();
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
     assert.deepEqual(await page.locator('#products th').allTextContents(), [
-      'HOST', 'DESCRIÇÃO', 'VENDA', 'ESTOQUE UN', 'CD CX', 'SITUAÇÃO',
+      'HOST', 'DESCRIÇÃO', 'VENDA (UN/Kg)', 'ESTOQUE (UN/Kg)', 'CD (Kg/Cx)', 'SITUAÇÃO',
       'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO FINAL', 'FORNECEDOR', 'MARGEM', 'ALERTAS', 'COBERTURA ESTOQUE (DIAS)', 'COBERTURA PEDIDO (DIAS)', 'ESTOQUE + PEDIDO (DIAS)',
     ]);
     const firstProduct = page.locator('#rows tr').first();
     const cells = await firstProduct.locator('td').allTextContents();
     assert.equal(cells.length, 16);
     assert.equal(cells[0], '384667');
+    assert.equal(cells[7], '1 Kg');
     assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
     assert.equal(cells[9], '0');
     assert.equal(await firstProduct.locator('td:nth-child(10).order-column').count(), 1);
@@ -811,13 +813,15 @@ async function checkViewport(browser, width) {
     await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases internas carregadas'));
     const products = Array.from({length:120}, (_,i) => ({
       codigo:String(900000+i), descricao:'Produto '+(i+1), vendaUnidade:30, estoqueLojaUnidade:0,
-      estoqueCDCaixa:20, quantidadeCaixa:1, pendenteCaixa:0, transitoCaixa:0, abc:'A',
+      estoqueCDCaixa:20, quantidadeCaixa:i%2?7:1, pendenteCaixa:0, transitoCaixa:0, abc:'A',
       pasta:'LIMPEZA', valorCaixa:10, alertasCadastro:[],
     }));
     await page.locator('#backupFile').setInputFiles({name:'pedido.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({products}))});
     await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Backup restaurado'));
     await page.locator('#suggestBtn').click();
     assert.equal(await page.locator('#suggestionRows tr').count(),120);
+    assert.equal(await page.locator('#kBoxes').innerText(),'420 Kg + 60 Cx');
+    assert.match(await page.locator('#suggestionSummary').innerText(),/420 Kg \+ 60 Cx/);
     const pdf = await page.pdf({preferCSSPageSize:true});
     const texto = require('node:child_process').execFileSync('pdftotext',['-layout','-','-'],{input:pdf,encoding:'utf8'});
     const folhas = texto.split('\f').filter(folha => folha.trim());

@@ -363,7 +363,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
     <div class="kpi"><span class="kpi-title">Produtos</span><b id="kProducts">0</b></div>
     <div class="kpi kpi-rupture" id="ruptureKpi" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrar somente rupturas" title="Filtrar somente rupturas"><span class="kpi-title">Rupturas</span><b id="kFalta">0</b></div>
     <div class="kpi"><span class="kpi-title">Com pedido</span><b id="kOrders">0</b></div>
-    <div class="kpi"><span class="kpi-title">Caixas sugeridas</span><b id="kBoxes">0</b></div>
+    <div class="kpi"><span class="kpi-title">Quantidade sugerida</span><b id="kBoxes">0</b></div>
     <div class="kpi kpi-money"><span class="kpi-title">Valor estimado</span><b id="kValue">R$ 0,00</b></div>
     <div class="kpi kpi-stock-cost" title="Campo 052 · Estoque a Custo com ICMS"><span class="kpi-title">Estoque a custo</span><b id="kStockCost">—</b></div>
   </section>
@@ -393,14 +393,14 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
         </div>
       </details>
     </div>
-    <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de produtos"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>VENDA</th><th>ESTOQUE UN</th><th>CD CX</th><th>SITUAÇÃO</th><th>PASTA</th><th>CX/CAIXA</th><th>ABC</th><th class="right order-column">PEDIDO FINAL</th><th>FORNECEDOR</th><th class="right">MARGEM</th><th>ALERTAS</th><th>COBERTURA ESTOQUE (DIAS)</th><th>COBERTURA PEDIDO (DIAS)</th><th>ESTOQUE + PEDIDO (DIAS)</th></tr></thead><tbody id="rows"><tr><td colspan="16">Importe o ERP para começar.</td></tr></tbody></table></div>
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de produtos"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>VENDA (UN/Kg)</th><th>ESTOQUE (UN/Kg)</th><th>CD (Kg/Cx)</th><th>SITUAÇÃO</th><th>PASTA</th><th title="1 = Kg · Acima de 1 = Cx">CX/CAIXA</th><th>ABC</th><th class="right order-column">PEDIDO FINAL</th><th>FORNECEDOR</th><th class="right">MARGEM</th><th>ALERTAS</th><th>COBERTURA ESTOQUE (DIAS)</th><th>COBERTURA PEDIDO (DIAS)</th><th>ESTOQUE + PEDIDO (DIAS)</th></tr></thead><tbody id="rows"><tr><td colspan="16">Importe o ERP para começar.</td></tr></tbody></table></div>
 <div class="pager" style="margin-top:10px"><button id="prev" disabled>Anterior</button><span id="pageLabel" class="small">Página 1 de 1</span><button id="next" disabled>Próxima</button><span class="small">100 registros por página</span></div>
   </section>
 
   <section class="panel hidden suggestions-panel" id="suggestions"><div class="panel-head no-print"><h2 id="suggestionsTitle" tabindex="-1">Sugestões de reposição</h2><button id="printSuggestions" class="good" type="button">Imprimir pedido para o CPD</button></div>
 <div class="print-heading"><h1 id="printTitle">JBS REPOSIÇÃO — PASTA PEDIDO</h1><div id="printContext"></div></div>
 <div id="suggestionSummary" class="small"></div>
-<div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de sugestões de reposição" style="margin-top:8px"><table><thead><tr><th>PRIORIDADE</th><th>HOST</th><th>PRODUTO</th><th>FORNECEDOR</th><th>ABC</th><th>ESTOQUE CX</th><th>PEDIDO CX</th><th>VALOR</th><th>MOTIVO</th></tr></thead><tbody id="suggestionRows"></tbody></table></div>
+<div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de sugestões de reposição" style="margin-top:8px"><table><thead><tr><th>PRIORIDADE</th><th>HOST</th><th>PRODUTO</th><th>FORNECEDOR</th><th>ABC</th><th>ESTOQUE</th><th>PEDIDO</th><th>VALOR</th><th>MOTIVO</th><th>UNIDADE</th></tr></thead><tbody id="suggestionRows"></tbody></table></div>
 
 </section>
   <details class="panel logistics-panel no-print" id="logisticsPanel" open>
@@ -409,7 +409,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <div class="panel-head logistics-actions"><label>Imprimir <select id="logisticsPrintMode"><option value="todos">Pendentes e em trânsito</option><option value="pendente">Somente pendentes</option><option value="transito">Somente em trânsito</option></select></label><button id="printLogistics" class="good" type="button">Imprimir acompanhamento</button></div>
 <p class="small">Tabela independente da lista de produtos. Exibe apenas itens com quantidade pendente ou em trânsito maior que zero, conforme o ERP importado. A busca e os filtros de pasta, fornecedor e curva ABC também se aplicam. Pedidos em acompanhamento aparecem mesmo com o pedido final zerado ou negativo.</p>
 <div class="logistics-summary"><span id="pendingSummary">Pedidos pendentes: 0 itens / 0 caixas</span><span id="transitSummary">Em trânsito: 0 itens / 0 caixas</span></div>
-<div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de pedidos pendentes e em trânsito"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>FORNECEDOR</th><th>PASTA</th><th>PEDIDO PENDENTE (CX)</th><th>EM TRÂNSITO (CX)</th></tr></thead><tbody id="logisticsRows"><tr><td colspan="6">Importe o ERP para consultar pedidos pendentes e em trânsito.</td></tr></tbody></table></div>
+<div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de pedidos pendentes e em trânsito"><table><thead><tr><th>HOST</th><th>DESCRIÇÃO</th><th>FORNECEDOR</th><th>PASTA</th><th>PEDIDO PENDENTE (Kg/Cx)</th><th>EM TRÂNSITO (Kg/Cx)</th></tr></thead><tbody id="logisticsRows"><tr><td colspan="6">Importe o ERP para consultar pedidos pendentes e em trânsito.</td></tr></tbody></table></div>
 <div class="pager" style="margin-top:10px"><button id="logisticsPrev" disabled type="button">Anterior</button><span id="logisticsPageLabel" class="small">Página 1 de 1</span><button id="logisticsNext" disabled type="button">Próxima</button><span class="small">100 registros por página</span></div>
 </div>
 </details>
@@ -424,20 +424,20 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <button type="button" class="good" id="printExcesso">Imprimir relatório de excesso</button>
 <button type="button" id="csvExcesso">Exportar CSV</button>
 <label>Curva <select id="excessoCurva"><option value="">Todas</option><option>A</option><option>B</option><option>C</option></select></label>
-<label>Venda máxima (cx/dia) <input id="excessoVenda" type="number" min="0" step="any" value="1"></label>
+<label>Venda máxima (Kg ou Cx/dia) <input id="excessoVenda" type="number" min="0" step="any" value="1"></label>
 <label>Cobertura mínima (dias) <input id="excessoDias" type="number" min="0" step="any" value="30"></label>
-<label>Excesso mínimo (cx) <input id="excessoMinCx" type="number" min="0" step="any"></label>
+<label>Excesso mínimo (Kg ou Cx) <input id="excessoMinCx" type="number" min="0" step="any"></label>
 <label>Valor mínimo do excesso (R$) <input id="excessoMinValor" type="number" min="0" step="0.01"></label>
 <label>Ordenar por <select id="excessoOrdem">
 <option value="cobertura">Maior cobertura</option>
 <option value="az">Produto (A–Z)</option><option value="za">Produto (Z–A)</option>
 <option value="valorDesc">Maior valor do excesso</option><option value="valorAsc">Menor valor do excesso</option>
-<option value="cxDesc">Maior excesso (cx)</option><option value="cxAsc">Menor excesso (cx)</option>
+<option value="cxDesc">Maior excesso (Kg ou Cx)</option><option value="cxAsc">Menor excesso (Kg ou Cx)</option>
 </select></label>
 </div>
 <p id="excessoResumo" aria-live="polite"></p>
 <p id="excessoTotais" aria-live="polite"></p>
-<div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (cx)</th><th>Venda (cx/dia)</th><th>Cobertura (dias)</th><th>Excesso (cx)</th><th>Valor do excesso (R$)</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
+<div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (Kg ou Cx)</th><th>Venda (Kg ou Cx/dia)</th><th>Cobertura (dias)</th><th>Excesso (Kg ou Cx)</th><th>Valor do excesso (R$)</th><th>Unidade</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
 </div></details>
 <section id="logisticsPrint" aria-hidden="true">
 <h1>JBS REPOSIÇÃO — ACOMPANHAMENTO DE PEDIDOS</h1>
@@ -868,13 +868,13 @@ function alertasProduto(p){
  const excedente=Math.abs(pedido);
  const media=p.mediaVendaCxDia;
  const diasExcedente=media>0
-  ?`Excedente de ${fmt.format(excedente)} cx equivale a ${fmt.format(excedente/media)} dias de venda pela média do período.`
+  ?`Excedente de ${fmt.format(excedente)} ${unidadePedido(p)} equivale a ${fmt.format(excedente/media)} dias de venda pela média do período.`
   :"Sem estimativa de dias para o excedente: média de vendas igual a zero ou negativa.";
  const estoque=fmt.format(p.estoqueLojaCx);
  const pendente=fmt.format(pendenteUsado(p));
  const transito=fmt.format(transitoUsado(p));
  const necessidade=fmt.format(p.necessidadeCaixa);
- const resumo=`PEDIDO NEGATIVO (cx): estoque loja ${estoque}, pendentes ${pendente}, trânsito ${transito}; necessidade com área de venda ${necessidade}. Sugestão 0. ${diasExcedente}`;
+ const resumo=`PEDIDO NEGATIVO (${unidadePedido(p)}): estoque loja ${estoque}, pendentes ${pendente}, trânsito ${transito}; necessidade com área de venda ${necessidade}. Sugestão 0. ${diasExcedente}`;
  return [resumo,...cadastro];
 }
 function sugestaoAtual(p){return quantidadeSugerida(p,pedidoFinalAtual(p))}
@@ -939,7 +939,21 @@ function produtosEmAcompanhamento(){
  return filtrarCurva(produtosPesquisados()).filter(p=>pendenteUsado(p)>0||transitoUsado(p)>0);
 }
 let logisticsPage=0;
-function renderLogistics(){const arr=produtosEmAcompanhamento();const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))}</td><td class="right">${fmt.format(transitoUsado(p))}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,pendenteUsado(p)),0))} caixas`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${fmt.format(arr.reduce((n,p)=>n+Math.max(0,transitoUsado(p)),0))} caixas`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
+function unidadePedido(p){
+ const tamanho=num(p.quantidadeCaixa);
+ return tamanho===1?"Kg":tamanho>1?"Cx":"Sem unidade";
+}
+function totalPorUnidade(produtos,quantidade){
+ const totais=new Map();
+ for(const p of produtos){
+  const valor=quantidade(p);
+  if(!(valor>0))continue;
+  const unidade=unidadePedido(p);
+  totais.set(unidade,(totais.get(unidade)||0)+valor);
+ }
+ return ["Kg","Cx","Sem unidade"].filter(u=>totais.has(u)).map(u=>fmt.format(totais.get(u))+" "+u).join(" + ")||"0";
+}
+function renderLogistics(){const arr=produtosEmAcompanhamento();const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))} ${unidadePedido(p)}</td><td class="right">${fmt.format(transitoUsado(p))} ${unidadePedido(p)}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${totalPorUnidade(arr,pendenteUsado)}`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${totalPorUnidade(arr,transitoUsado)}`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
 const inteiroExcesso=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
 function renderExcesso(limiteImpressao){
  const painel=$("excessoPanel");
@@ -979,30 +993,30 @@ function renderExcesso(limiteImpressao){
  const disponiveis=linhas.length;
  if(Number.isInteger(limiteImpressao)&&limiteImpressao<disponiveis)linhas.length=limiteImpressao;
  for(const linha of linhas)contagem[linha.abc]++;
- $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} cx/dia · Cobertura mínima: ${dias.value||0} dias · Excesso mínimo: ${minCx.value||0} cx · Valor mínimo: ${minValor.value===""?"sem limite":money(minValor.valueAsNumber)} · Ordem: ${ordem.selectedOptions[0].textContent} · Período de vendas: ${state.config.periodoVenda} dias · Linhas: ${linhas.length} de ${disponiveis}`;
+ $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} Kg ou Cx/dia · Cobertura mínima: ${dias.value||0} dias · Excesso mínimo: ${minCx.value||0} Kg ou Cx · Valor mínimo: ${minValor.value===""?"sem limite":money(minValor.valueAsNumber)} · Ordem: ${ordem.selectedOptions[0].textContent} · Período de vendas: ${state.config.periodoVenda} dias · Linhas: ${linhas.length} de ${disponiveis}`;
  $("excessoResumo").textContent="Curva A: "+contagem.A+" · Curva B: "+contagem.B+" · Curva C: "+contagem.C;
- let caixas=0,valor=0,semCusto=0;
+ const totais=totalPorUnidade(linhas.map(l=>l.p),p=>p.estoqueLojaCx-p.necessidadeCaixa);
+ let valor=0,semCusto=0;
  for(const linha of linhas){
-  caixas+=linha.excesso;
   if(linha.valorExcesso===null)semCusto++;
   else valor+=linha.valorExcesso;
  }
  const totalFinanceiro=semCusto===0?money(valor):semCusto===linhas.length?"indisponível (sem custo informado)":money(valor)+" (parcial; produtos sem custo: "+semCusto+")";
- $("excessoTotais").textContent="Total de caixas em excesso: "+inteiroExcesso.format(caixas)+" cx · Valor total do excesso: "+totalFinanceiro;
+ $("excessoTotais").textContent="Total em excesso: "+totais+" · Valor total do excesso: "+totalFinanceiro;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
-  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td></tr>`
- ).join("")||'<tr><td colspan="8">Nenhum produto para os limites selecionados.</td></tr>';
- return {caixas,totalFinanceiro,quantidade:linhas.length};
+  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
+ ).join("")||'<tr><td colspan="9">Nenhum produto para os limites selecionados.</td></tr>';
+ return {totais,totalFinanceiro,quantidade:linhas.length};
 }
 $("excessoPanel").ontoggle=renderExcesso;
 for(const id of ["excessoCurva","excessoVenda","excessoDias","excessoMinCx","excessoMinValor","excessoOrdem"])$(id).oninput=renderExcesso;
 $("csvExcesso").onclick=()=>{
- const {caixas,totalFinanceiro,quantidade}=renderExcesso();
+ const {totais,totalFinanceiro,quantidade}=renderExcesso();
  const tabela=$("excessoRows").closest("table");
  const valores=linha=>Array.from(linha.cells,celula=>celula.textContent);
  const registros=[valores(tabela.tHead.rows[0])];
  if(quantidade)for(const linha of $("excessoRows").rows)registros.push(valores(linha));
- registros.push(["","TOTAL","","","","",inteiroExcesso.format(caixas),totalFinanceiro]);
+ registros.push(["","TOTAL","","","","",totais,totalFinanceiro,""]);
  const campo=valor=>{
   const seguro=/^\s*[=+@\-\t\r]/.test(valor)?"'"+valor:valor;
   return '"'+seguro.replace(/"/g,'""')+'"';
@@ -1018,9 +1032,9 @@ $("printExcesso").onclick=()=>{
  document.body.classList.add("print-excesso");
  window.print();
 };
-function render(){let opcoesPasta;renderExcesso();const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${p.cdNaoInformado?"-*-":fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${p.pastaERP?esc(p.pasta):`<select data-pasta-host="${esc(p.codigo)}" aria-label="Pasta do produto ${esc(p.codigo)}"><option value="" disabled${p.pasta?"":" selected"}>Selecionar pasta</option>${(opcoesPasta??=opcoesDePasta()).map(nome=>`<option value="${esc(nome)}"${nome===p.pasta?" selected":""}>${esc(nome)}</option>`).join("")}</select>`}</td><td class="right">${fmt.format(p.quantidadeCaixa)}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${pedidoBloqueado(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td>${celulasCobertura(p)}</tr>`).join("")||'<tr><td colspan="16">Nenhum produto encontrado.</td></tr>';
+function render(){let opcoesPasta;renderExcesso();const supplierSelect=$("supplierFilter"),suppliers=[...new Map(state.products.map(p=>[norm(p.fornecedor),String(p.fornecedor||"").trim()]).filter(([k,v])=>k&&v)).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));supplierSelect.innerHTML='<option value="">TODOS OS FORNECEDORES</option>'+suppliers.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("");supplierSelect.value=state.supplier;$("supplierCount").textContent=`${fmt.format(suppliers.length)} fornecedores disponíveis`;const base=operationalProducts(),operational=filtrarCurva(base),all=state.onlyRupture?operational.filter(emRuptura):operational,start=state.page*state.pageSize,items=all.slice(start,start+state.pageSize);$("rows").innerHTML=items.map(p=>`<tr class="${emRuptura(p)?"rupture-row":p.situacao?"alertrow":""}"><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td class="right">${fmt.format(p.vendaUnidade)}</td><td class="right">${fmt.format(p.estoqueLojaUnidade)}</td><td class="right">${p.cdNaoInformado?"-*-":fmt.format(p.estoqueCDCaixa)}</td><td class="${emRuptura(p)?"rupture-cell":""}">${esc(p.situacao||"")}</td><td>${p.pastaERP?esc(p.pasta):`<select data-pasta-host="${esc(p.codigo)}" aria-label="Pasta do produto ${esc(p.codigo)}"><option value="" disabled${p.pasta?"":" selected"}>Selecionar pasta</option>${(opcoesPasta??=opcoesDePasta()).map(nome=>`<option value="${esc(nome)}"${nome===p.pasta?" selected":""}>${esc(nome)}</option>`).join("")}</select>`}</td><td class="right">${fmt.format(p.quantidadeCaixa)}${p.quantidadeCaixa===1?" Kg":p.quantidadeCaixa>1?" Cx":""}</td><td>${esc(p.abc||"")}</td><td class="right order-column">${pedidoBloqueado(p)?"0":p.pedido==null?"—":`<button type="button" class="manual-edit-btn ${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?"edited":""}" data-edit-code="${esc(p.codigo)}" title="Clique para ajustar temporariamente o pedido final">${fmt.format(pedidoFinalAtual(p))}</button>${Object.prototype.hasOwnProperty.call(state.manualOrders,p.codigo)?'<span class="manual-edit-note">MANUAL</span>':""}`}</td><td>${esc(p.fornecedor||"")}</td><td class="right margin-column">${p.margemVenda==null?"—":pct(p.margemVenda)}</td><td class="product-alerts">${esc(alertasProduto(p).join(" | "))}</td>${celulasCobertura(p)}</tr>`).join("")||'<tr><td colspan="16">Nenhum produto encontrado.</td></tr>';
  $("count").textContent=`${fmt.format(all.length)} registros`;const pages=Math.max(1,Math.ceil(all.length/state.pageSize));$("pageLabel").textContent=`Página ${state.page+1} de ${pages}`;$("prev").disabled=state.page===0;$("next").disabled=state.page>=pages-1;
- const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=fmt.format(p.reduce((s,x)=>s+sugestaoAtual(x),0));$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));$("kStockCost").textContent=campoAtivo("f052")?money(p.reduce((s,x)=>s+num(x.estoqueCustoERP),0)):"—";$("abcRuleText").textContent=abcPorFaturamento()?"Curva ABC por faturamento (campo 001 · Valor Venda) no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do valor acumulado, B até 95% e C o restante.":"Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.";renderCampos();renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
+ const p=all;$("kProducts").textContent=fmt.format(p.length);$("kFalta").textContent=fmt.format(operational.filter(emRuptura).length);$("ruptureKpi").classList.toggle("is-filtering",state.onlyRupture);$("ruptureKpi").setAttribute("aria-pressed",String(state.onlyRupture));$("onlyRupture").checked=state.onlyRupture;$("onlyNegative").checked=state.onlyNegative;$("onlyZero").checked=state.onlyZero;$("kOrders").textContent=fmt.format(p.filter(x=>sugestaoAtual(x)>0).length);$("kBoxes").textContent=totalPorUnidade(p,sugestaoAtual);$("kValue").textContent=money(p.reduce((s,x)=>s+valorPedidoAtual(x),0));$("kStockCost").textContent=campoAtivo("f052")?money(p.reduce((s,x)=>s+num(x.estoqueCustoERP),0)):"—";$("abcRuleText").textContent=abcPorFaturamento()?"Curva ABC por faturamento (campo 001 · Valor Venda) no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do valor acumulado, B até 95% e C o restante.":"Curva ABC por caixas vendidas no grupo escolhido pelos filtros operacionais e de fornecedor. A até 80% do volume acumulado, B até 95% e C o restante.";renderCampos();renderDiag();renderLogistics();updateAbcControls(state.onlyRupture?base.filter(emRuptura):base)}
 function renderDiag(){const d=state.diagnostics;if(!d)return;const pct=(a)=>`${(a/d.total*100).toFixed(1).replace(".",",")}%`;const items=[["ERP analisado",fmt.format(d.total)],["MIX encontrado",`${fmt.format(d.mm)} (${pct(d.mm)})`],["MIX ausente",fmt.format(d.missM)]];$("diagnostics").innerHTML=items.map(([a,b])=>`<div class="diag">${a}<b>${b}</b></div>`).join("")}
 function renderCampos(){
  const carregado=state.products.length>0;
@@ -1037,7 +1051,7 @@ function recalcularCampos(){
  render();
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA_UN","vendaUnidade"],["ESTOQUE_UN","estoqueLojaUnidade"],["PENDENTE_CX","pendenteCaixa"],["TRANSITO_CX","transitoCaixa"],["ESTOQUE_CD_CX","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"],["VALOR_VENDA","valorVendaERP"],["CUSTO_VENDA","custoVendaERP"],["MARGEM","margemVenda"],["ESTOQUE_CUSTO","estoqueCustoERP"],["ORIGEM_VALOR_CAIXA","origemValorCaixa"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):c[1]==="pendenteCaixa"?pendenteUsado(p):c[1]==="transitoCaixa"?transitoUsado(p):c[1]==="margemVenda"?(p.margemVenda==null?"":pct(p.margemVenda)):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
+function csv(){const cols=[["HOST","codigo"],["PRODUTO","descricao"],["FORNECEDOR","fornecedor"],["ABC","abc"],["PASTA","pasta"],["VENDA","vendaUnidade"],["ESTOQUE_LOJA","estoqueLojaUnidade"],["PENDENTE","pendenteCaixa"],["TRANSITO","transitoCaixa"],["ESTOQUE_CD","estoqueCDCaixa"],["PEDIDO_FINAL","pedidoFinalArredondado"],["PEDIDO_SUGERIDO","pedidoSugestao"],["VALOR_PEDIDO","valorPedido"],["ALERTAS","alertasCadastro"],["VALOR_VENDA","valorVendaERP"],["CUSTO_VENDA","custoVendaERP"],["MARGEM","margemVenda"],["ESTOQUE_CUSTO","estoqueCustoERP"],["ORIGEM_VALOR_CAIXA","origemValorCaixa"],["UNIDADE_PEDIDO","unidadePedido"],["UNIDADE_VENDA_ESTOQUE","unidadeBase"]];const q=v=>`"${String(Array.isArray(v)?v.join(" | "):v??"").replace(/"/g,'""')}"`;const out=[cols.map(x=>x[0]).join(";"),...visible().map(p=>cols.map(c=>q(c[1]==="unidadePedido"?unidadePedido(p):c[1]==="unidadeBase"?(unidadePedido(p)==="Kg"?"Kg":"UN"):c[1]==="pedidoFinalArredondado"?pedidoFinalAtual(p):c[1]==="pedidoSugestao"?sugestaoAtual(p):c[1]==="valorPedido"?valorPedidoAtual(p):c[1]==="alertasCadastro"?alertasProduto(p):c[1]==="pendenteCaixa"?pendenteUsado(p):c[1]==="transitoCaixa"?transitoUsado(p):c[1]==="margemVenda"?(p.margemVenda==null?"":pct(p.margemVenda)):p[c[1]])).join(";"))].join("\r\n");const blob=new Blob(["\uFEFF"+out],{type:"text/csv;charset=utf-8"});download(blob,"JBS_REPOSICAO_"+new Date().toISOString().slice(0,10)+".csv")}
 function download(blob,name){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 document.querySelectorAll("[data-abc-filter]").forEach(btn=>btn.addEventListener("click",()=>{selectedAbc=btn.dataset.abcFilter;state.page=0;logisticsPage=0;limparSugestoes();render()}));
 $("offlineDownload").addEventListener("click",baixarVersaoOffline);
@@ -1180,18 +1194,18 @@ $("printLogistics").onclick=()=>{
  if(!state.products.length){notice("Importe o relatório ERP antes de imprimir o acompanhamento.","error");return}
  const seletor=$("logisticsPrintMode");
  const colunas=[
-  {tipo:"pendente",titulo:"PENDENTE (CX)",resumo:"Pendentes",quantidade:pendenteUsado},
-  {tipo:"transito",titulo:"EM TRÂNSITO (CX)",resumo:"Em trânsito",quantidade:transitoUsado}
+  {tipo:"pendente",titulo:"PENDENTE (Kg/Cx)",resumo:"Pendentes",quantidade:pendenteUsado},
+  {tipo:"transito",titulo:"EM TRÂNSITO (Kg/Cx)",resumo:"Em trânsito",quantidade:transitoUsado}
  ].filter(c=>seletor.value==="todos"||seletor.value===c.tipo);
  const items=produtosEmAcompanhamento().filter(p=>colunas.some(c=>c.quantidade(p)>0))
   .sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"}));
  if(!items.length){notice("Nenhum pedido para imprimir com a seleção atual.","error");return}
  $("logisticsPrintHead").innerHTML=["HOST","DESCRIÇÃO","FORNECEDOR","PASTA",...colunas.map(c=>c.titulo)].map(t=>`<th>${t}</th>`).join("");
- $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td>${colunas.map(c=>`<td>${fmt.format(c.quantidade(p))}</td>`).join("")}</tr>`).join("");
+ $("logisticsPrintRows").innerHTML=items.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td>${colunas.map(c=>`<td>${fmt.format(c.quantidade(p))} ${unidadePedido(p)}</td>`).join("")}</tr>`).join("");
  $("logisticsPrintInfo").textContent=`${seletor.selectedOptions[0].textContent} | Data: ${new Date().toLocaleString("pt-BR")} | Registros: ${fmt.format(items.length)} | Fornecedor: ${state.supplier||"TODOS"} | Pasta: ${state.filter||"TODAS"}`;
  $("logisticsPrintTotals").textContent=colunas.map(c=>{
   const positivos=items.map(p=>c.quantidade(p)).filter(q=>q>0);
-  return `${c.resumo}: ${fmt.format(positivos.length)} itens / ${fmt.format(positivos.reduce((s,q)=>s+q,0))} caixas`;
+  return `${c.resumo}: ${fmt.format(positivos.length)} itens / ${totalPorUnidade(items,c.quantidade)}`;
  }).join(" | ");
  document.body.classList.add("print-logistics");
  window.print();
@@ -1208,7 +1222,7 @@ $("printSuggestions").onclick=()=>{
 window.addEventListener("beforeprint",()=>{
  if(!document.body.classList.contains("print-excesso")&&!document.body.classList.contains("print-logistics")&&!$("suggestions").classList.contains("hidden"))renderSugestoes();
 });
-function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td></tr>`).join("")||'<tr><td colspan="9">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
+function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td><td>${unidadePedido(p)}</td></tr>`).join("")||'<tr><td colspan="10">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${totalPorUnidade(arr,sugestaoAtual)} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
 $("suggestBtn").onclick=renderSugestoes;
 $("saveBtn").onclick=()=>{const backup={version:1,createdAt:new Date().toISOString(),products:state.products,config:state.config,matrix:[...state.matrix]};download(new Blob([JSON.stringify(backup)],{type:"application/json"}),"JBS_BACKUP_LOCAL.json");notice("Backup JSON baixado para o aparelho.","ok")};
 $("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.products.forEach(p=>aplicarPastaSalva(p,true));state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);mostrarParametrosCobertura();if(backup.config)salvarCobertura();state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
