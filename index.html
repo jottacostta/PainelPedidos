@@ -56,7 +56,7 @@ h1, h2, h3, p { margin: 0; }
 h2 { font-size: 21px; line-height: 1.2; letter-spacing: -.025em; }
 h3 { font-size: 15px; }
 .small { color: var(--muted); font-size: 13px; }
-.hidden, #logisticsPrint, .print-heading, .print-signatures { display: none; }
+.hidden, #logisticsPrint, .print-heading { display: none; }
 #products, #logisticsPanel { scroll-margin-top: 16px; }
 
 .topbar { background: var(--white); border-bottom: 1px solid var(--line); }
@@ -298,7 +298,12 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
   .top-nav { display: none; }
 }
 @media print {
-  @page { size: A4 landscape; margin: 10mm; }
+  @page {
+    size: A4 landscape;
+    margin: 10mm 10mm 25mm;
+    @bottom-left { content: "Responsável pela conferência: __________________________________"; font: 9pt Arial, sans-serif; }
+    @bottom-right { content: "Digitado no CPD por: __________________________  Data: ____/____/________"; font: 9pt Arial, sans-serif; }
+  }
   :root, body { background: #fff !important; color: #000 !important; font: 9pt Arial, sans-serif; }
   body > .topbar, main > :not(#suggestions, #logisticsPrint), .no-print { display: none !important; }
   main { display: block; padding: 0; width: 100%; max-width: none; }
@@ -323,7 +328,6 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
     print-color-adjust: exact; -webkit-print-color-adjust: exact;
   }
   #logisticsPrint :is(th, td):nth-child(n+5) { text-align: right; }
-  #suggestions .print-signatures { display: flex; justify-content: space-between; gap: 18px; margin-top: 24px; break-inside: avoid; }
 }
 #helpCalculations{box-sizing:border-box;width:min(42rem,94vw);max-height:85vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:20px;color:var(--ink)}#helpCalculations::backdrop{background:rgba(0,0,0,.45)}#helpCalculations details{border-top:1px solid var(--line)}#helpCalculations details p{margin:0 0 14px}#helpCalculations form{display:flex;align-items:center;justify-content:space-between;gap:12px}
 </style>
@@ -397,7 +401,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <div class="print-heading"><h1 id="printTitle">JBS REPOSIÇÃO — PASTA PEDIDO</h1><div id="printContext"></div></div>
 <div id="suggestionSummary" class="small"></div>
 <div class="tablewrap" tabindex="0" role="region" aria-label="Tabela de sugestões de reposição" style="margin-top:8px"><table><thead><tr><th>PRIORIDADE</th><th>HOST</th><th>PRODUTO</th><th>FORNECEDOR</th><th>ABC</th><th>ESTOQUE CX</th><th>PEDIDO CX</th><th>VALOR</th><th>MOTIVO</th></tr></thead><tbody id="suggestionRows"></tbody></table></div>
-<div class="print-signatures"><div>Responsável pela conferência: __________________________________</div><div>Digitado no CPD por: __________________________ Data: ____/____/________</div></div>
+
 </section>
   <details class="panel logistics-panel no-print" id="logisticsPanel" open>
 <summary><h2>Acompanhamento de pedidos</h2></summary>
