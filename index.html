@@ -511,7 +511,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <details class="panel no-print"><summary><h2>pasta.js</h2></summary>
 <p>Abra o pasta.js da raiz do projeto (ao lado de index.html) para gravar cada escolha por HOST no arquivo. No celular, você também pode importar ou baixar o cadastro.</p>
 <button id="vincularPastas" type="button">Vincular pasta.js</button>
-<label>Importar pasta.js <input type="file" id="importarPastas" accept=".js"></label>
+<label>Importar pasta.js <input type="file" id="importarPastas"></label>
 <button id="baixarPastas" type="button">Baixar pasta.js</button></details>
 </main>
 <script>/* read-excel-file 5.8.8, MIT */
@@ -674,7 +674,7 @@ $("importarPastas").onchange=async e=>{try{if(e.target.files[0]){await lerPastas
 $("vincularPastas").hidden=!window.showOpenFilePicker;
 $("vincularPastas").onclick=async()=>{try{
  await filaPastas;
- const [handle]=await showOpenFilePicker({types:[{description:"Cadastro pasta.js",accept:{"text/javascript":[".js"]}}]});
+ const [handle]=await showOpenFilePicker();
  if(handle.name!=="pasta.js")throw Error("Selecione o arquivo pasta.js.");
  if(await handle.requestPermission({mode:"readwrite"})!=="granted")throw Error("Permissão de escrita necessária.");
  await lerPastas(await handle.getFile());arquivoPastas=handle;notice("pasta.js vinculado nesta sessão.","ok");
