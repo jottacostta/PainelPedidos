@@ -613,6 +613,8 @@ async function checkFaltaEPasta(page) {
 }
 
 async function checkExcesso(page) {
+  // Este cenário mede o excesso com as metas padrão, após um backup com curva A de 8 dias.
+  await page.evaluate(() => localStorage.removeItem('PainelPedidos:parametrosCobertura'));
   await page.reload();
   await page.waitForFunction(() => document.querySelector('#notice').textContent.startsWith('Bases internas carregadas'));
   const products = [
