@@ -727,7 +727,7 @@ async function checkExcesso(page) {
   assert.equal(await rows.locator('td').nth(4).innerText(), '0 (1 un)');
   const curva = await rows.locator('td').nth(2).innerText();
   const dias = { A: 7, B: 10, C: 14 }[curva];
-  const excessoUn = (5 - dias / 30).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const excessoUn = Math.floor(5 - dias / 30);
   assert.equal(await rows.locator('td').nth(6).innerText(), '0 (' + excessoUn + ' un)');
 }
 
