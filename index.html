@@ -969,6 +969,17 @@ function totalPorUnidade(produtos,quantidade){
 }
 function renderLogistics(){const arr=produtosEmAcompanhamento();const pages=Math.max(1,Math.ceil(arr.length/100));logisticsPage=Math.min(logisticsPage,pages-1);const page=arr.slice(logisticsPage*100,(logisticsPage+1)*100);$("logisticsRows").innerHTML=page.map(p=>`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor||"")}</td><td>${esc(p.pasta||"")}</td><td class="right">${fmt.format(pendenteUsado(p))} ${unidadePedido(p)}</td><td class="right">${fmt.format(transitoUsado(p))} ${unidadePedido(p)}</td></tr>`).join("")||'<tr><td colspan="6">Nenhum pedido pendente ou em trânsito encontrado.</td></tr>';$("pendingSummary").textContent=`Pedidos pendentes: ${fmt.format(arr.filter(p=>pendenteUsado(p)>0).length)} itens / ${totalPorUnidade(arr,pendenteUsado)}`;$("transitSummary").textContent=`Em trânsito: ${fmt.format(arr.filter(p=>transitoUsado(p)>0).length)} itens / ${totalPorUnidade(arr,transitoUsado)}`;$("logisticsPageLabel").textContent=`Página ${logisticsPage+1} de ${pages}`;$("logisticsPrev").disabled=logisticsPage===0;$("logisticsNext").disabled=logisticsPage>=pages-1;}
 const inteiroExcesso=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
+function unidadesInteirasExcesso(valor){
+ // Compensa a imprecisão da conversão de caixas para unidades junto aos inteiros.
+ return inteiroExcesso.format(Math.floor(valor+Number.EPSILON*Math.max(1,valor)));
+}
+function vendaExcesso(p,media){
+ if(media>0&&media<1){
+  if(unidadePedido(p)==="Cx")return `0 (${unidadesInteirasExcesso(p.vendaUnidade)} un)`;
+  return fmt.format(media)+" Kg/dia";
+ }
+ return fmt.format(media);
+}
 function renderExcesso(limiteImpressao){
  const painel=$("excessoPanel");
  if(!painel.open)return;
@@ -1018,7 +1029,7 @@ function renderExcesso(limiteImpressao){
  const totalFinanceiro=semCusto===0?money(valor):semCusto===linhas.length?"indisponível (sem custo informado)":money(valor)+" (parcial; produtos sem custo: "+semCusto+")";
  $("excessoTotais").textContent="Total em excesso: "+totais+" · Valor total do excesso: "+totalFinanceiro;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
-  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${estoque>0&&estoque<1&&unidadePedido(p)==="Cx"?`0 (${fmt.format(p.estoqueLojaUnidade)} un)`:inteiroExcesso.format(estoque)}</td><td>${unidadePedido(p)==="Cx"&&p.vendaUnidade>0&&p.vendaUnidade<p.quantidadeCaixa?`0 (${fmt.format(p.vendaUnidade)} un)`:fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${unidadePedido(p)==="Cx"&&excesso>0&&excesso<1?`0 (${fmt.format(excesso*p.quantidadeCaixa)} un)`:inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
+  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${estoque>0&&estoque<1&&unidadePedido(p)==="Cx"?`0 (${unidadesInteirasExcesso(p.estoqueLojaUnidade)} un)`:inteiroExcesso.format(estoque)}</td><td>${vendaExcesso(p,media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${unidadePedido(p)==="Cx"&&excesso>0&&excesso<1?`0 (${unidadesInteirasExcesso(excesso*p.quantidadeCaixa)} un)`:inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
  ).join("")||'<tr><td colspan="9">Nenhum produto para os limites selecionados.</td></tr>';
  return {totais,totalFinanceiro,quantidade:linhas.length};
 }
