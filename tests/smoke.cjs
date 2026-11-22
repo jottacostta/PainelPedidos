@@ -530,6 +530,17 @@ async function checkERPFields(page) {
   assert.equal(await page.locator('#kStockCost').innerText(), '—');
   await field('f052').check();
 
+  const direto = [report.split('\r\n')[0], report.split('\r\n').find(line => line.includes('\t702\t'))].join('\r\n');
+  await page.locator('#directErpFile').setInputFiles({ name: 'fornecedor.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(direto, 'latin1') });
+  await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('direto importado: 1'));
+  await page.locator('#onlyDirect').check();
+  assert.equal((await cells('702'))[4], '20');
+  assert.match((await cells('702'))[16], /^[1-9]\d* Cx$/);
+  assert.equal((await cells('702'))[9], '0');
+  assert.equal(await (await row('703')).count(), 0);
+  await page.locator('#onlyDirect').uncheck();
+  assert.equal(await (await row('703')).count(), 1);
+
   // ERP antigo (sem 001, 003 e 052): campos aparecem como não encontrados e o cálculo segue por caixas.
   await page.locator('#erpFile').setInputFiles(path.join(__dirname, 'fixture-erp.xls'));
   await page.waitForFunction(() => /ERP importado: 3/.test(document.querySelector('#notice').textContent));
