@@ -597,6 +597,9 @@ async function checkFaltaEPasta(page) {
   const pasta=page.getByLabel('Pasta do produto 900100');
   assert.equal(await pasta.inputValue(), 'LIMPEZA');
   await pasta.selectOption('BEBIDAS');
+  assert.match(await page.locator('#mensagemPasta').innerText(), /900100.*BEBIDAS.*salva neste navegador/);
+  await page.locator('#fecharRetornoPasta').click();
+  assert(await page.locator('#retornoPasta').isHidden());
   assert.equal(await pasta.inputValue(), 'BEBIDAS');
   await carregar();
   assert.equal(await pasta.inputValue(), 'BEBIDAS');
@@ -616,6 +619,8 @@ async function checkFaltaEPasta(page) {
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('vinculado nesta sessão'));
   await pasta.selectOption('LIMPEZA');
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('pasta.js atualizado'));
+  assert(await page.locator('#retornoPasta').isVisible());
+  assert.match(await page.locator('#mensagemPasta').innerText(), /pasta.js atualizado: HOST 900100 → LIMPEZA/);
   const salvo = await page.evaluate(async () => {
     const dir = await navigator.storage.getDirectory();
     return (await (await dir.getFileHandle('pasta.js')).getFile()).text();
