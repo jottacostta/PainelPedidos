@@ -15,6 +15,9 @@
 | [#13](https://github.com/jottacostta/PainelPedidos/pull/13) | Classificação de pastas por semelhança com o MIX. |
 | [#17](https://github.com/jottacostta/PainelPedidos/pull/17) | Exposição e pulmão calculados pela venda média diária × 2, em substituição à consulta à base PART GON. |
 | [#22](https://github.com/jottacostta/PainelPedidos/pull/22) | Campos do ERP ESTATÍSTICA (001, 003, 052, 153, 154, 164) com caixas de marcar: curva ABC por faturamento, valor pelo custo, margem e indicador de estoque a custo. |
+| [#23](https://github.com/jottacostta/PainelPedidos/pull/23) | O G do cabeçalho baixa `PainelPedidos-offline.html`, cópia completa do painel com as bases embutidas, para usar sem internet. |
+| [#24](https://github.com/jottacostta/PainelPedidos/pull/24) | Calculadora na janela de edição do pedido final, com atalhos do produto em caixas e resultado arredondado para cima. |
+| [#25](https://github.com/jottacostta/PainelPedidos/pull/25) | CD com `-*-` volta a gerar RUPTURA CD e pedido 0 por padrão, com caixa opcional para liberar, e aparece como `-*-` na coluna CD CX. |
 
 ## Versões anteriores
 
