@@ -1018,7 +1018,7 @@ function renderExcesso(limiteImpressao){
  const totalFinanceiro=semCusto===0?money(valor):semCusto===linhas.length?"indisponível (sem custo informado)":money(valor)+" (parcial; produtos sem custo: "+semCusto+")";
  $("excessoTotais").textContent="Total em excesso: "+totais+" · Valor total do excesso: "+totalFinanceiro;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
-  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
+  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${estoque>0&&estoque<1&&unidadePedido(p)==="Cx"?`0 (${fmt.format(p.estoqueLojaUnidade)} un)`:inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
  ).join("")||'<tr><td colspan="9">Nenhum produto para os limites selecionados.</td></tr>';
  return {totais,totalFinanceiro,quantidade:linhas.length};
 }
