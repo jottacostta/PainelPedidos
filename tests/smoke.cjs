@@ -480,6 +480,8 @@ async function checkERPFields(page) {
   assert.equal((await cells('704'))[9], '0');
   // A coluna CD CX mostra -*- para diferenciar do CD zerado.
   assert.equal((await cells('704'))[4], '-*-');
+  assert.equal((await cells('704'))[16], '14 Cx');
+  assert.equal((await cells('705'))[16], '—');
   // Caixa -*- marcada: 704 sai da ruptura e mantém pedido zero; 705 continua em ruptura.
   await field('f164x').check();
   assert.notEqual((await cells('704'))[5], 'RUPTURA CD');
@@ -751,7 +753,7 @@ async function checkViewport(browser, width) {
     assert.equal(cells[7], '1 Kg');
     assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
     assert.equal(cells[9], '0');
-    assert.match(cells[16], /^\d+ Kg$/);
+    assert.equal(cells[16], '—');
     assert.equal(await firstProduct.locator('td:nth-child(10).order-column').count(), 1);
 
     for (const curve of ['A', '']) {
