@@ -438,7 +438,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 </div>
 <p id="excessoResumo" aria-live="polite"></p>
 <p id="excessoTotais" aria-live="polite"></p>
-<div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (Kg ou Cx)</th><th>Venda (Kg ou Cx/dia)</th><th>Cobertura (dias)</th><th>Excesso (Kg ou Cx)</th><th>Valor do excesso (R$)</th><th>Unidade</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
+<div class="tablewrap" tabindex="0" role="region" aria-label="Produtos com excesso"><table><thead><tr><th>HOST</th><th>Produto</th><th>Curva</th><th>Estoque (Kg ou Cx)</th><th>Venda (Kg ou Cx/dia; un no período)</th><th>Cobertura (dias)</th><th>Excesso (Kg ou Cx)</th><th>Valor do excesso (R$)</th><th>Unidade</th></tr></thead><tbody id="excessoRows"></tbody></table></div>
 </div></details>
 <section id="logisticsPrint" aria-hidden="true">
 <h1>JBS REPOSIÇÃO — ACOMPANHAMENTO DE PEDIDOS</h1>
@@ -1018,7 +1018,7 @@ function renderExcesso(limiteImpressao){
  const totalFinanceiro=semCusto===0?money(valor):semCusto===linhas.length?"indisponível (sem custo informado)":money(valor)+" (parcial; produtos sem custo: "+semCusto+")";
  $("excessoTotais").textContent="Total em excesso: "+totais+" · Valor total do excesso: "+totalFinanceiro;
  $("excessoRows").innerHTML=linhas.map(({p,abc,estoque,media,cobertura,excesso,valorExcesso})=>
-  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${estoque>0&&estoque<1&&unidadePedido(p)==="Cx"?`0 (${fmt.format(p.estoqueLojaUnidade)} un)`:inteiroExcesso.format(estoque)}</td><td>${fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
+  `<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${abc}</td><td>${estoque>0&&estoque<1&&unidadePedido(p)==="Cx"?`0 (${fmt.format(p.estoqueLojaUnidade)} un)`:inteiroExcesso.format(estoque)}</td><td>${unidadePedido(p)==="Cx"&&p.vendaUnidade>0&&p.vendaUnidade<p.quantidadeCaixa?`0 (${fmt.format(p.vendaUnidade)} un)`:fmt.format(media)}</td><td>${media===0?"Sem venda no período":inteiroExcesso.format(cobertura)}</td><td>${unidadePedido(p)==="Cx"&&excesso>0&&excesso<1?`0 (${fmt.format(excesso*p.quantidadeCaixa)} un)`:inteiroExcesso.format(excesso)}</td><td>${valorExcesso===null?"—":money(valorExcesso)}</td><td>${unidadePedido(p)}</td></tr>`
  ).join("")||'<tr><td colspan="9">Nenhum produto para os limites selecionados.</td></tr>';
  return {totais,totalFinanceiro,quantidade:linhas.length};
 }
