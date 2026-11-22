@@ -536,6 +536,10 @@ async function checkERPFields(page) {
   await page.locator('#onlyDirect').check();
   assert.equal((await cells('702'))[4], '20');
   assert.match((await cells('702'))[16], /^[1-9]\d* Cx$/);
+  await (await row('702')).locator('[data-edit-direct]').click();
+  await page.locator('#manualEditValue').fill('19');
+  await page.locator('#saveManualEdit').click();
+  assert.match((await cells('702'))[16], /19 Cx.*MANUAL/);
   assert.equal((await cells('702'))[9], '0');
   assert.equal(await (await row('703')).count(), 0);
   await page.locator('#onlyDirect').uncheck();
