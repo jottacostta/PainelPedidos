@@ -716,6 +716,19 @@ async function checkExcesso(page) {
   assert.deepEqual(await page.locator('#period option').allTextContents(), ['15','30','45','60']);
   await page.locator('#excessoDias').fill('61');
   assert.match(await rows.innerText(), /Nenhum produto/);
+  const parcial = { ...products[2], vendaUnidade: 1, quantidadeCaixa: 6, estoqueLojaUnidade: 5 };
+  await page.locator('#excessoCurva').selectOption('');
+  await page.locator('#backupFile').setInputFiles({
+    name: 'estoque-parcial.json', mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ products: [parcial] })),
+  });
+  await rows.getByText('0 (5 un)', { exact: true }).waitFor();
+  assert.equal(await rows.locator('td').nth(3).innerText(), '0 (5 un)');
+  assert.equal(await rows.locator('td').nth(4).innerText(), '0 (1 un)');
+  const curva = await rows.locator('td').nth(2).innerText();
+  const dias = { A: 7, B: 10, C: 14 }[curva];
+  const excessoUn = (5 - dias / 30).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  assert.equal(await rows.locator('td').nth(6).innerText(), '0 (' + excessoUn + ' un)');
 }
 
 async function checkViewport(browser, width) {
