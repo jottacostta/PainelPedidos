@@ -727,8 +727,15 @@ async function checkExcesso(page) {
   assert.equal(await rows.locator('td').nth(4).innerText(), '0 (1 un)');
   const curva = await rows.locator('td').nth(2).innerText();
   const dias = { A: 7, B: 10, C: 14 }[curva];
-  const excessoUn = (5 - dias / 30).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const excessoUn = Math.floor(5 - dias / 30);
   assert.equal(await rows.locator('td').nth(6).innerText(), '0 (' + excessoUn + ' un)');
+  const caixas = { ...parcial, vendaUnidade: 36, estoqueLojaUnidade: 120 };
+  const peso = { ...parcial, codigo: '1660807', quantidadeCaixa: 1, vendaUnidade: 6.008, estoqueLojaUnidade: 23.378 };
+  await page.locator('#backupFile').setInputFiles({
+    name: 'venda-media.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({products: [caixas, peso]})),
+  });
+  await rows.getByText('0 (36 un)', {exact: true}).waitFor();
+  await rows.getByText('0,2 Kg/dia', {exact: true}).waitFor();
 }
 
 async function checkViewport(browser, width) {
