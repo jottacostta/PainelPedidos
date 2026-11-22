@@ -210,7 +210,7 @@ async function checkRuptureCD(page) {
   const stock = page.locator('#rows tr').filter({ hasText: 'PEDIDO NEGATIVO COM ESTOQUE' });
   assert.equal(await transit.locator('td.order-column').innerText(), '-9');
   const transitAlert = await transit.locator('.product-alerts').innerText();
-  assert.match(transitAlert, /estoque loja 0,04, pendentes 0, trânsito 8/);
+  assert.match(transitAlert, /estoque loja 0 \(1 un\), pendentes 0, trânsito 8/);
   assert.match(transitAlert, /necessidade com área de venda 0/);
   assert.match(transitAlert, /Sugestão 0/);
   assert.match(transitAlert, /Sem estimativa de dias para o excedente/);
@@ -229,7 +229,7 @@ async function checkRuptureCD(page) {
   const blockedRow = csv.split('\r\n').find(line => line.startsWith('"01";'));
   assert(blockedRow);
   assert.deepEqual(blockedRow.split(';').slice(9, 13), ['"0"', '"0"', '"0"', '"0"']);
-  assert.match(csv, /PEDIDO NEGATIVO \(Cx\): estoque loja 0,04, pendentes 0, trânsito 8/);
+  assert.match(csv, /PEDIDO NEGATIVO \(Cx\): estoque loja 0 \(1 un\), pendentes 0, trânsito 8/);
 
   await page.locator('#suggestBtn').click();
   const suggestions = await page.locator('#suggestionRows').innerText();
@@ -711,7 +711,7 @@ async function checkExcesso(page) {
   assert.match(registros[2], /"TOTAL".*"53 Kg";".*2\.650,00"/);
   await page.locator('#excessoMinCx').fill('');
   await page.locator('#excessoCurva').selectOption('A');
-  assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1', '60', '53']);
+  assert.deepEqual((await rows.locator('td').allTextContents()).slice(0, 7), ['101', 'PRODUTO 101', 'A', '60', '1 Kg/dia', '60', '53']);
   assert.match(await rows.locator('td').nth(7).innerText(), /2\.650,00/);
   assert.deepEqual(await page.locator('#period option').allTextContents(), ['15','30','45','60']);
   await page.locator('#excessoDias').fill('61');
@@ -724,17 +724,18 @@ async function checkExcesso(page) {
   });
   await rows.getByText('0 (5 un)', { exact: true }).waitFor();
   assert.equal(await rows.locator('td').nth(3).innerText(), '0 (5 un)');
-  assert.equal(await rows.locator('td').nth(4).innerText(), '0 (1 un)');
+  assert.equal(await rows.locator('td').nth(4).innerText(), '0 (1 un) no período');
   const curva = await rows.locator('td').nth(2).innerText();
   const dias = { A: 7, B: 10, C: 14 }[curva];
   const excessoUn = Math.floor(5 - dias / 30);
   assert.equal(await rows.locator('td').nth(6).innerText(), '0 (' + excessoUn + ' un)');
-  const caixas = { ...parcial, vendaUnidade: 36, estoqueLojaUnidade: 120 };
+  const caixas = { ...parcial, vendaUnidade: 38, estoqueLojaUnidade: 122 };
   const peso = { ...parcial, codigo: '1660807', quantidadeCaixa: 1, vendaUnidade: 6.008, estoqueLojaUnidade: 23.378 };
   await page.locator('#backupFile').setInputFiles({
     name: 'venda-media.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({products: [caixas, peso]})),
   });
-  await rows.getByText('0 (36 un)', {exact: true}).waitFor();
+  await rows.getByText('6 (2 un) no período', {exact: true}).waitFor();
+  await rows.getByText('20 (2 un)', {exact: true}).waitFor();
   await rows.getByText('0,2 Kg/dia', {exact: true}).waitFor();
 }
 
@@ -787,7 +788,7 @@ async function checkViewport(browser, width) {
     assert.equal(cells.length, 17);
     assert.equal(cells[0], '384667');
     assert.equal(cells[7], '1 Kg');
-    assert.deepEqual(cells.slice(2, 6), ['10', '0', '0', 'RUPTURA CD']);
+    assert.deepEqual(cells.slice(2, 6), ['10 Kg', '0 Kg', '0', 'RUPTURA CD']);
     assert.equal(cells[9], '0');
     assert.equal(cells[16], '—');
     assert.equal(await firstProduct.locator('td:nth-child(10).order-column').count(), 1);
