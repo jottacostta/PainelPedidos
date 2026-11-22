@@ -354,6 +354,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
     </div>
     <div class="hero-actions">
       <span class="file-control"><input id="erpFile" type="file" accept=".xlsx,.xls,.txt,.tsv"><label class="file-label" for="erpFile"><span class="upload-icon" aria-hidden="true">↑</span>Importar ERP ESTATÍSTICA</label></span>
+      <span class="file-control"><input id="directErpFile" type="file" accept=".xlsx,.xls,.txt,.tsv"><label class="file-label" for="directErpFile"><span class="upload-icon" aria-hidden="true">↑</span>Importar ERP de fornecedor direto</label></span>
       <button id="suggestBtn" type="button" class="hero-secondary">Gerar sugestões</button>
     </div>
   </section>
@@ -389,7 +390,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <div class="filters" id="filters">
 <button data-filter="" class="active">TODOS</button><button data-filter="CONSERVAS">CONSERVAS</button><button data-filter="CEREAIS">CEREAIS</button><button data-filter="LIMPEZA">LIMPEZA</button><button data-filter="PRODUTOS INFLAMAVEIS">INFLAMÁVEIS</button><button data-filter="ALIM_MASSAS">ALIM MASSAS</button><button data-filter="BEBIDAS_BISCOITO">BEBIDAS</button><button data-filter="PERFUMARIA">PERFUMARIA</button><button data-filter="LATICINIOS">LATICÍNIOS</button><button data-filter="AÇOUGUE">AÇOUGUE</button><button data-filter="EMBUTIDOS AÇOUGUE">EMBUTIDOS</button><button data-filter="SALGADOS">SALGADOS</button><button data-filter="CDS">CDS</button><button data-filter="DIRETO">DIRETO</button><button data-filter="MATRIZ">MATRIZ</button>
 </div>
-          <div class="order-filters" aria-label="Filtros do pedido CD e ruptura"><label><input id="hideNegative" type="checkbox" checked> Ocultar pedidos negativos</label><label><input id="hideZero" type="checkbox" checked> Ocultar pedidos zerados</label><label><input id="onlyNegative" type="checkbox"> Somente pedidos negativos</label><label><input id="onlyZero" type="checkbox"> Somente pedidos zerados</label><label class="rupture-toggle"><input id="onlyRupture" type="checkbox"> Somente rupturas</label><span class="small">Os filtros de quantidade consideram o canal de abastecimento do produto.</span></div>
+          <div class="order-filters" aria-label="Filtros do pedido CD e ruptura"><label><input id="hideNegative" type="checkbox" checked> Ocultar pedidos negativos</label><label><input id="hideZero" type="checkbox" checked> Ocultar pedidos zerados</label><label><input id="onlyNegative" type="checkbox"> Somente pedidos negativos</label><label><input id="onlyZero" type="checkbox"> Somente pedidos zerados</label><label><input id="onlyDirect" type="checkbox"> Somente pedidos de fornecedor direto</label><label class="rupture-toggle"><input id="onlyRupture" type="checkbox"> Somente rupturas</label><span class="small">Os filtros de quantidade consideram o canal de abastecimento do produto.</span></div>
         </div>
       </details>
     </div>
@@ -503,7 +504,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 <details><summary>Venda média diária</summary><p>Caixas vendidas ÷ dias do relatório. O período padrão é 30 dias. Em 30 dias, 360 unidades com 12 por caixa representam 30 caixas vendidas e média de 1 caixa por dia.</p><p><strong>Média da água sanitária em 30 dias</strong></p><ol><li>841 UN ÷ 30 = 28,0333 UN/dia. Dividindo por 6 UN/Cx, a média é aproximadamente 4,6722 Cx/dia.</li><li>Para um produto em Kg, 90 Kg ÷ 30 dias = 3 Kg/dia. As próximas contas usam a média sem arredondar.</li></ol></details>
 <details><summary>Curva ABC</summary><p>O painel ordena os HOSTs pela contribuição no grupo filtrado. Com o campo 001 ativo, usa o faturamento. Nos demais casos, usa caixas vendidas. A classe A inclui o item que alcança 80% do acumulado, B segue até 95% e C reúne o restante. Alterar o fornecedor ou filtro operacional pode mudar a curva e o pedido.</p><p><strong>Participação no faturamento do grupo filtrado</strong></p><ol><li>Três HOSTs faturaram R$ 800, R$ 150 e R$ 50. Total = R$ 1.000.</li><li>O primeiro soma 80% e fica em A. O segundo leva o acumulado a 95% e fica em B. Os 5% restantes ficam em C.</li></ol></details>
 <details><summary>Cobertura, gôndola e pulmão</summary><p>Cobertura em caixas = média diária × dias da curva. Os padrões ajustáveis são A = 7, B = 10 e C = 14 dias. A meta já inclui a área de vendas e o pulmão.</p><p><strong>Meta de um produto da curva A</strong></p><ol><li>Com média de 3 Kg/dia e meta A de 7 dias, a necessidade é 3 × 7 = 21 Kg.</li><li>Se configurar A para 9 dias, a meta passa a 3 × 9 = 27 Kg. A exposição e o pulmão já estão incluídos.</li></ol></details>
-<details><summary>Pedido Direto</summary><p>Usa a mesma meta de cobertura, estoque da loja, trânsito e regra de pendência do Pedido CD. Somente o marcador -*- no saldo CD identifica abastecimento direto pelo fornecedor. Saldo 0 indica falta temporária no depósito. Com meta de 7 Cx, estoque de 2 Cx, 1 Cx em trânsito e nenhuma pendência, o Pedido Direto é 7 − 2 − 1 = 4 Cx, quando o CD indica -*-. A coluna usa Kg quando CX/CAIXA é 1 e Cx quando é maior que 1.</p></details><details><summary>Pedido CD</summary><p>Da meta total da curva, subtraia estoque da loja em caixas, pendências (153) e trânsito (154). Cada campo logístico desativado entra como zero. No exemplo de 1 caixa/dia, um item A com 3 caixas na loja, sem pendências e com 2 caixas em trânsito pede 7 − 3 − 2 = 2 caixas.</p><p><strong>Da meta ao pedido de água sanitária</strong></p><ol><li>Considere o item na curva A com 7 dias, CD disponível, sem pendência e com 2 Cx em trânsito. Meta = (841 ÷ 6 ÷ 30) × 7 ≈ 32,71 Cx.</li><li>Pedido = 32,71 − 1,5 em estoque − 2 em trânsito ≈ 29,21 Cx. Arredondando para cima, o pedido CD é 30 Cx. Se houver pendência positiva com o campo 153 ativo, o pedido CD é zero.</li></ol></details>
+<details><summary>Pedido Direto</summary><p>Usa a mesma meta de cobertura, estoque da loja, trânsito e regra de pendência do Pedido CD. Use Importar ERP de fornecedor direto para acrescentar ou atualizar produtos por HOST. Esses produtos podem gerar compra direta com qualquer saldo no depósito. No ERP geral, -*- também identifica abastecimento direto. Com meta de 7 Cx, estoque de 2 Cx, 1 Cx em trânsito e nenhuma pendência, o Pedido Direto é 7 − 2 − 1 = 4 Cx, quando o CD indica -*-. A coluna usa Kg quando CX/CAIXA é 1 e Cx quando é maior que 1.</p></details><details><summary>Pedido CD</summary><p>Da meta total da curva, subtraia estoque da loja em caixas, pendências (153) e trânsito (154). Cada campo logístico desativado entra como zero. No exemplo de 1 caixa/dia, um item A com 3 caixas na loja, sem pendências e com 2 caixas em trânsito pede 7 − 3 − 2 = 2 caixas.</p><p><strong>Da meta ao pedido de água sanitária</strong></p><ol><li>Considere o item na curva A com 7 dias, CD disponível, sem pendência e com 2 Cx em trânsito. Meta = (841 ÷ 6 ÷ 30) × 7 ≈ 32,71 Cx.</li><li>Pedido = 32,71 − 1,5 em estoque − 2 em trânsito ≈ 29,21 Cx. Arredondando para cima, o pedido CD é 30 Cx. Se houver pendência positiva com o campo 153 ativo, o pedido CD é zero.</li></ol></details>
 <details><summary>Pedido mínimo e arredondamento</summary><p>Com venda e estoque da loja zerados, o pedido principal é 1 na unidade do produto, sujeito aos bloqueios. Sem pendências nem trânsito, com embalagem diferente de 1 unidade, estoque abaixo de meia caixa e pedido menor que 1, o mínimo é 1 caixa. O arredondamento afasta o valor de zero: 2,2 vira 3 e −2,2 vira −3.</p><p><strong>Aplicação do mínimo</strong></p><ol><li>Com 6 UN/Cx e estoque de 2 UN, o saldo é 2 ÷ 6 ≈ 0,33 Cx, abaixo de meia caixa.</li><li>Se o cálculo resultar em 0,2 Cx e não houver pendência, trânsito ou bloqueio, o mínimo leva o pedido a 1 Cx.</li></ol></details>
 <details><summary>Cobertura do estoque e do pedido em dias</summary><p>Dividimos as caixas disponíveis, as caixas do pedido CD ou a soma das duas pela venda média diária em caixas no período selecionado. A projeção considera recebimento imediato e exclui pendências e trânsito. Saldos negativos e pedidos negativos contam como zero caixa disponível ou a receber. Os dias são arredondados ao inteiro mais próximo. A edição do pedido atualiza os dias. Sem venda no período, a cobertura é indeterminada.</p><p><strong>Quantos dias cobrem 41 Cx de água sanitária?</strong></p><ol><li>Suponha um pedido CD ajustado para 41 Cx. Estoque atual = 9 ÷ (841 ÷ 30) ≈ 0,32 dia → 0 dia na tela.</li><li>Pedido sozinho = (41 × 6) ÷ (841 ÷ 30) ≈ 8,78 dias → 9 dias. Estoque + pedido = (9 + 41 × 6) ÷ (841 ÷ 30) ≈ 9,10 dias → 9 dias. O painel arredonda depois de calcular cada cobertura.</li></ol></details>
 <details><summary>Ruptura e prioridade</summary><p>Com o campo 164 ativo, CD zerado bloqueia o pedido. CD CX igual a -*- sempre zera o pedido. Com o campo 153 ativo, qualquer quantidade pendente positiva também zera o pedido CD para evitar duplicidade. A opção de ruptura altera apenas a situação exibida. Com CD CX positivo e estoque da loja zero ou negativo, a situação é RUPTURA TEMPORÁRIA se houver caixas pendentes ou em trânsito. Sem reposição pendente ou em trânsito, a situação é FALTA. Ambas entram na contagem e no filtro de rupturas. FALTA também identifica estoque da loja até 6 unidades sem pendência ou trânsito. Até 12 unidades, a prioridade é A-PRIORIDADE. Acima disso, venda zero gera B-SEM VDA.</p><p><strong>O mesmo estoque em duas situações</strong></p><ol><li>Com a loja zerada e o CD abastecido, 1 Cx em trânsito classifica o item como RUPTURA TEMPORÁRIA. Com pendência e trânsito zerados, a situação passa a FALTA.</li><li>Se a loja tiver 8 UN, sem pendência ou trânsito, ela supera o limite de falta de 6 UN e ainda recebe A-PRIORIDADE, pois 8 ≤ 12.</li></ol></details>
@@ -789,7 +790,7 @@ function cruzar(erp){
 }
 function quantidadeSugerida(p,final){
  const alertas=p.alertasCadastro||[];
- const semCadastro=alertas.includes("SEM CADASTRO MIX")&&!(p.pastaManual&&String(p.pasta||"").trim());
+ const semCadastro=!p.erpFornecedorDireto&&alertas.includes("SEM CADASTRO MIX")&&!(p.pastaManual&&String(p.pasta||"").trim());
  if(semCadastro||alertas.includes("QUANTIDADE POR CAIXA INVÁLIDA")||num(p.quantidadeCaixa)<=0||final==null)return 0;
  return Math.max(0,final);
 }
@@ -809,7 +810,7 @@ function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidad
  const principal=pend>0?0:!valid?null:((venda===0&&estoque===0)?1:p.necessidadeCaixa-stock-trans-pend);
  const quantidade=principal==null?null:((pend===0&&trans===0&&cx!==1&&principal<1&&estoque<cx/2)?1:principal);
  const arredondado=quantidade==null?null:Math.sign(quantidade)*Math.ceil(Math.abs(quantidade));
- p.pedidoDireto=p.cdNaoInformado===true&&arredondado!=null?Math.max(0,arredondado):null;
+ p.pedidoDireto=fornecedorDireto(p)&&arredondado!=null?Math.max(0,arredondado):null;
  p.pedidoPrincipal=bloqueado?0:principal;
  p.pedido=bloqueado?0:quantidade;
  p.pedidoFinalArredondado=bloqueado?0:arredondado;
@@ -850,9 +851,10 @@ async function parseERP(file){
  const header=rows.findIndex(row=>row.some(v=>norm(v)==="CHAVE"));
  if(header<0)throw Error("Cabeçalho ERP ESTATÍSTICA não reconhecido. Faltam: CHAVE.");
  const pos=mapearColunasERP(rows[header].map(v=>String(v??"")));const cel=(c,k)=>pos[k]<0?undefined:c[pos[k]];const valor=(c,k)=>pos[k]<0?null:num(c[pos[k]]);const minimo=Math.max(...Object.values(pos))+1;const out=[];for(const c of rows.slice(header+1)){if(!xlsx&&c.length<minimo&&pos.pasta!==minimo-1)continue;if(!/^\d+$/.test(code(cel(c,"chave"))))continue;const codigo=code(cel(c,"chave"));if(!codigo)continue;out.push({codigo,descricao:String(cel(c,"descricao")??"").trim(),vendaUnidade:num(cel(c,"venda")),estoqueLojaUnidade:num(cel(c,"estoque")),pendenteCaixa:pos.pendente<0?null:boxes(cel(c,"pendente")),transitoCaixa:pos.transito<0?null:boxes(cel(c,"transito")),estoqueCDCaixa:pos.cd<0?null:boxes(cel(c,"cd")),cdNaoInformado:pos.cd>=0&&String(cel(c,"cd")??"").trim()==="-*-",valorVendaERP:valor(c,"valorVenda"),custoVendaERP:valor(c,"custoVenda"),estoqueCustoERP:/^(?:|-\*-)$/.test(String(cel(c,"estoqueCusto")??"").trim())?null:valor(c,"estoqueCusto"),fornecedor:"",pastaERP:String(cel(c,"pasta")??"").trim().replace(/^(?:-\*-|-)$/,""),pasta:String(cel(c,"pasta")??"").trim().replace(/^(?:-\*-|-)$/,""),pallet:0,valorCaixa:0,...quantidadeCaixaERP(cel(c,"pendente"),cel(c,"transito"))})}return out}
+function fornecedorDireto(p){return p.erpFornecedorDireto===true||p.cdNaoInformado===true}
 function semEstoqueCD(p){return campoAtivo("f164")&&p.estoqueCDCaixa!=null&&num(p.estoqueCDCaixa)===0&&!(p.cdNaoInformado&&campoAtivo("f164x"))}
 function emRuptura(p){return p.situacao==="FALTA"||p.situacao==="RUPTURA TEMPORÁRIA"||p.situacao==="RUPTURA CD"}
-function pedidoBloqueado(p){return p.cdNaoInformado===true||semEstoqueCD(p)||pendenteUsado(p)>0}
+function pedidoBloqueado(p){return fornecedorDireto(p)||semEstoqueCD(p)||pendenteUsado(p)>0}
 const diasCoberturaFmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
 function celulasCobertura(p){
  const media=p.mediaVendaCxDia;
@@ -882,7 +884,7 @@ function alertasProduto(p){
  const resumo=`PEDIDO NEGATIVO (${unidadePedido(p)}): estoque loja ${estoque}, pendentes ${pendente}, trânsito ${transito}; necessidade com área de venda ${necessidade}. Sugestão 0. ${diasExcedente}`;
  return [resumo,...cadastro];
 }
-function pedidoDoCanal(p){return p.cdNaoInformado===true?p.pedidoDireto:pedidoFinalAtual(p)}
+function pedidoDoCanal(p){return fornecedorDireto(p)?p.pedidoDireto:pedidoFinalAtual(p)}
 function sugestaoAtual(p){return quantidadeSugerida(p,pedidoDoCanal(p))}
 function valorPedidoAtual(p){return sugestaoAtual(p)*Math.max(0,num(p.valorCaixaCalculo??p.valorCaixa))}
 let selectedAbc="";
@@ -890,14 +892,14 @@ function confirmedCurve(p){return (p.alertasCadastro||[]).includes("SEM CLASSIFI
 function updateAbcControls(base){for(const key of ["A","B","C"])$("abcCount"+key).textContent=fmt.format(base.filter(p=>confirmedCurve(p)===key).length);$("abcCountAll").textContent=fmt.format(base.length);document.querySelectorAll("[data-abc-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.abcFilter===selectedAbc)))}
 function produtosDoGrupo(){
  let arr=state.products;
- if(state.filter==="CDS")arr=arr.filter(p=>(!campoAtivo("f164")||num(p.estoqueCDCaixa)>=1)&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
- else if(state.filter==="DIRETO")arr=arr.filter(p=>p.cdNaoInformado===true).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
+ if(state.filter==="CDS")arr=arr.filter(p=>!fornecedorDireto(p)&&(!campoAtivo("f164")||num(p.estoqueCDCaixa)>=1)&&num(p.estoqueLojaUnidade)<=3).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
+ else if(state.filter==="DIRETO")arr=arr.filter(fornecedorDireto).sort((a,b)=>norm(a.pasta).localeCompare(norm(b.pasta)));
  else if(state.filter==="MATRIZ")arr=arr.filter(p=>state.matrix.has(p.codigo));
  else if(state.filter){
   const cats={"CONSERVAS":["CONSERVAS"],"CEREAIS":["CEREAIS","RACAO / CEREAIS","CAFE / CEREAIS"],"LIMPEZA":["LIMPEZA"],"PRODUTOS INFLAMAVEIS":["PRODUTOS INFLAMAVEIS"],"ALIM_MASSAS":["ALIM INF","ALIM. INF","MASSAS"],"BEBIDAS_BISCOITO":["BEBIDAS","BISCOITO","BISCOITOS"],"PERFUMARIA":["PERFUMARIA","FL 96-P","FL 96-B"],"LATICINIOS":["LATICINIOS"],"AÇOUGUE":["ACOUGUE"],"EMBUTIDOS AÇOUGUE":["EMBUTIDOS ACOUGUE"],"SALGADOS":["SALGADOS"]};
   const allowed=(cats[state.filter]||[state.filter]).map(norm);
   arr=arr.filter(p=>allowed.includes(norm(p.pasta)));
-  if(state.filter!=="PRODUTOS INFLAMAVEIS"&&campoAtivo("f164"))arr=arr.filter(p=>num(p.estoqueCDCaixa)>0);
+  if(state.filter!=="PRODUTOS INFLAMAVEIS"&&campoAtivo("f164"))arr=arr.filter(p=>fornecedorDireto(p)||num(p.estoqueCDCaixa)>0);
  }
  if(state.supplier)arr=arr.filter(p=>norm(p.fornecedor)===state.supplier);
  return arr;
@@ -925,6 +927,7 @@ function produtosPesquisados(){
 }
 function operationalProducts(){
  let arr=produtosPesquisados();
+ if($("onlyDirect").checked)arr=arr.filter(p=>fornecedorDireto(p)&&sugestaoAtual(p)>0);
  if(state.onlyNegative)arr=arr.filter(p=>pedidoDoCanal(p)!=null&&pedidoDoCanal(p)<0);
  else if(state.onlyZero)arr=arr.filter(p=>pedidoDoCanal(p)!=null&&pedidoDoCanal(p)===0);
  else {
@@ -1077,7 +1080,27 @@ function limparSugestoes(){
  $("suggestions").classList.add("hidden");
  $("suggestionRows").innerHTML="";
 }
-$("erpFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;notice("Lendo relatório ERP...");const erp=await parseERP(f);limparRevisaoPedido();state.colunasERP=colunasDosProdutos(erp);state.products=cruzar(erp).map(calc);state.page=0;render();notice(`ERP importado: ${fmt.format(state.products.length)} produtos processados. Confira a cobertura cadastral antes de usar as sugestões.`,"ok");try{await save()}catch(err){console.warn(err)}}catch(err){notice("Falha na importação: "+err.message,"error")}finally{e.target.value=""}};
+$("directErpFile").onchange=async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  const linhas=await parseERP(file);
+  if(!linhas.length)throw Error("Nenhum produto encontrado no relatório.");
+  const produtos=index(state.products);
+  state.colunasERP=colunasDosProdutos([...state.products,...linhas]);
+  const diretos=cruzar(linhas.map(p=>({...p,erpFornecedorDireto:true})));
+  for(const p of diretos){produtos.set(p.codigo,p);delete state.manualOrders[p.codigo]}
+  const todos=[...produtos.values()];
+  state.colunasERP=colunasDosProdutos(todos);
+  const missM=todos.filter(p=>p.alertasCadastro.includes("SEM CADASTRO MIX")).length;
+  state.diagnostics={total:todos.length,mm:todos.length-missM,missM};
+  classificarABC(todos);
+  state.products=todos.map(calc);
+  state.page=0;limparSugestoes();render();
+  notice(`ERP de fornecedor direto importado: ${fmt.format(diretos.length)} produtos processados.`,"ok");
+ }catch(err){notice("Falha na importação: "+err.message,"error")}finally{e.target.value=""}
+};
+$("erpFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;notice("Lendo relatório ERP...");const erp=await parseERP(f);limparRevisaoPedido();state.colunasERP=colunasDosProdutos(erp);const diretos=new Set(state.products.filter(p=>p.erpFornecedorDireto).map(p=>p.codigo));
+state.products=cruzar(erp.map(p=>({...p,erpFornecedorDireto:diretos.has(p.codigo)}))).map(calc);state.page=0;render();notice(`ERP importado: ${fmt.format(state.products.length)} produtos processados. Confira a cobertura cadastral antes de usar as sugestões.`,"ok");try{await save()}catch(err){console.warn(err)}}catch(err){notice("Falha na importação: "+err.message,"error")}finally{e.target.value=""}};
 $("baseFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data.mix))throw Error("JSON deve conter o array mix.");state.mix=data.mix;notice(`Bases atualizadas: MIX ${fmt.format(state.mix.length)}. Reimporte o ERP para recalcular.`,"ok")}catch(err){notice("Falha ao atualizar bases: "+err.message,"error")}finally{e.target.value=""}};
 $("matrixFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error("A matriz deve ser um array JSON de códigos.");state.matrix=new Set(data.map(code));if(state.filter==="MATRIZ"){limparSugestoes();state.page=0;logisticsPage=0}notice(`Matriz carregada: ${fmt.format(state.matrix.size)} códigos.`,"ok");render()}catch(err){notice(err.message,"error")}finally{e.target.value=""}};
 $("filters").onclick=e=>{const b=e.target.closest("button[data-filter]");if(!b)return;state.filter=b.dataset.filter;state.page=0;logisticsPage=0;limparSugestoes();document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("active",x===b));render()};
@@ -1087,6 +1110,7 @@ $("hideNegative").onchange=e=>{state.hideNegative=e.target.checked;state.page=0;
 $("hideZero").onchange=e=>{state.hideZero=e.target.checked;state.page=0;render()};
 $("onlyNegative").onchange=e=>{state.onlyNegative=e.target.checked;if(state.onlyNegative){state.onlyZero=false;$("onlyZero").checked=false}state.page=0;render()};
 $("onlyZero").onchange=e=>{state.onlyZero=e.target.checked;if(state.onlyZero){state.onlyNegative=false;$("onlyNegative").checked=false}state.page=0;render()};
+$("onlyDirect").onchange=()=>{state.page=0;render();if(!$("suggestions").classList.contains("hidden"))renderSugestoes()};
 $("onlyRupture").onchange=e=>{state.onlyRupture=e.target.checked;state.page=0;render()};
 function toggleRuptureFilter(){state.onlyRupture=!state.onlyRupture;state.page=0;render()}
 $("ruptureKpi").onclick=toggleRuptureFilter;
@@ -1228,7 +1252,7 @@ $("printSuggestions").onclick=()=>{
 window.addEventListener("beforeprint",()=>{
  if(!document.body.classList.contains("print-excesso")&&!document.body.classList.contains("print-logistics")&&!$("suggestions").classList.contains("hidden"))renderSugestoes();
 });
-function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${p.cdNaoInformado===true?"Pedido Direto ao fornecedor":p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td><td>${unidadePedido(p)}</td></tr>`).join("")||'<tr><td colspan="10">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${totalPorUnidade(arr,sugestaoAtual)} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
+function renderSugestoes(){const base=visible();const arr=base.filter(p=>sugestaoAtual(p)>0).sort((a,b)=>String(a.descricao||"").localeCompare(String(b.descricao||""),"pt-BR",{sensitivity:"base"})||String(a.codigo||"").localeCompare(String(b.codigo||"")));$("suggestionRows").innerHTML=arr.map(p=>`<tr><td>${esc(p.prioridade||"NORMAL")}</td><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.fornecedor)}</td><td>${esc(p.abc)}</td><td>${fmt.format(p.estoqueLojaCx||0)}</td><td>${fmt.format(sugestaoAtual(p))}</td><td>${money(valorPedidoAtual(p))}</td><td>${fornecedorDireto(p)?"Pedido Direto ao fornecedor":p.situacao?"Ruptura / estoque crítico":p.prioridade||"Cobertura ABC"}</td><td>${unidadePedido(p)}</td></tr>`).join("")||'<tr><td colspan="10">Nenhuma sugestão encontrada para os filtros selecionados.</td></tr>';$("suggestionSummary").textContent=`${fmt.format(arr.length)} ${state.onlyRupture?"produtos em ruptura com pedido sugerido":"produtos com pedido sugerido"} · ${totalPorUnidade(arr,sugestaoAtual)} · ${money(arr.reduce((s,p)=>s+valorPedidoAtual(p),0))} estimados.`;const supplierLabel=state.supplier?($("supplierFilter").selectedOptions[0]?.textContent||"Fornecedor selecionado"):"Todos os fornecedores";const folders=[...new Set(arr.map(p=>String(p.pasta||"").trim()).filter(Boolean))];const categoryLabel=folders.length===1?folders[0]:(state.filter||"TODAS AS PASTAS");$("printTitle").textContent=`JBS REPOSIÇÃO — PASTA PEDIDO ${categoryLabel}`;$("printContext").textContent=`Data: ${new Date().toLocaleDateString("pt-BR")} · Fornecedor: ${supplierLabel} · Categoria: ${categoryLabel} · Filtro de ruptura: ${state.onlyRupture?"Somente rupturas":"Desativado"}`;$("suggestions").classList.remove("hidden");return arr.length}
 $("suggestBtn").onclick=renderSugestoes;
 $("saveBtn").onclick=()=>{const backup={version:1,createdAt:new Date().toISOString(),products:state.products,config:state.config,matrix:[...state.matrix]};download(new Blob([JSON.stringify(backup)],{type:"application/json"}),"JBS_BACKUP_LOCAL.json");notice("Backup JSON baixado para o aparelho.","ok")};
 $("backupFile").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const backup=JSON.parse(await f.text());if(!Array.isArray(backup.products))throw Error("Arquivo não contém a lista de produtos processados.");limparRevisaoPedido();state.products=backup.products.map(p=>({...p,alertasCadastro:(p.alertasCadastro||[]).filter(alerta=>alerta!=="SEM PART GON")}));state.config={...state.config,...(backup.config||{})};state.config.campos={...camposPadrao(),...(backup.config?.campos||{})};state.products.forEach(p=>aplicarPastaSalva(p,true));state.colunasERP=colunasDosProdutos(state.products);if(state.config.diasA===7&&state.config.diasB===14&&state.config.diasC===21){state.config.diasB=10;state.config.diasC=14}state.matrix=new Set(backup.matrix||[]);state.products.forEach(calc);mostrarParametrosCobertura();if(backup.config)salvarCobertura();state.page=0;render();try{await save()}catch(err){}notice(`Backup restaurado: ${fmt.format(state.products.length)} produtos. Para recalcular a curva ABC com o ERP, importe o relatório novamente.`,"ok")}catch(err){notice("Falha ao restaurar backup: "+err.message,"error")}finally{e.target.value=""}};
