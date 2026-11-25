@@ -33,6 +33,7 @@ async function checkManualCalculator(page) {
   const edit = page.locator('#rows [data-edit-code="801"]');
   await edit.click();
   await page.waitForSelector('#manualEditModal.open');
+  assert.equal(await page.locator('#calcChips button').filter({hasText:'Venda/dia'}).getAttribute('data-calc-insert'),'2,5');
   assert.match(await page.locator('#calcChips').innerText(), /Sugestão/);
   assert.match(await page.locator('#calcChips').innerText(), /÷ 12 un\/cx/);
   assert.equal(await page.locator('#calcExpr').innerText(), '0');

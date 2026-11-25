@@ -501,7 +501,7 @@ footer { padding: 3px 0; color: var(--muted); font-size: 12px; }
 </div>
 <dialog id="helpCalculations" aria-labelledby="helpTitle"><form method="dialog"><h2 id="helpTitle">Como o painel calcula</h2><button autofocus>Fechar</button></form>
 <details open><summary>Venda e estoque em Kg ou Cx</summary><p>Divida as unidades vendidas ou em estoque pelas unidades por caixa. O painel lê a embalagem nos campos 153 ou 154 do ERP. Embalagens ausentes ou divergentes impedem o cálculo automático.</p><p><strong>Água sanitária vendida em caixas de 6 unidades</strong></p><ol><li>Venda de 841 UN ÷ 6 = 140,17 Cx no período. Estoque de 9 UN ÷ 6 = 1,5 Cx.</li><li>Na regra do painel, embalagem 1 indica Kg. Assim, 90 Kg vendidos continuam sendo 90 Kg.</li></ol></details>
-<details><summary>Venda média diária</summary><p>Caixas vendidas ÷ dias do relatório. O período padrão é 30 dias. Em 30 dias, 360 unidades com 12 por caixa representam 30 caixas vendidas e média de 1 caixa por dia.</p><p><strong>Média da água sanitária em 30 dias</strong></p><ol><li>841 UN ÷ 30 = 28,0333 UN/dia. Dividindo por 6 UN/Cx, a média é aproximadamente 4,6722 Cx/dia.</li><li>Para um produto em Kg, 90 Kg ÷ 30 dias = 3 Kg/dia. As próximas contas usam a média sem arredondar.</li></ol></details>
+<details><summary>Venda média diária</summary><p>Com o campo 035 ativo, a média usa as caixas ou os quilos vendidos divididos pelos dias com venda de cada produto. Se o campo estiver ausente, desmarcado, vazio, inválido ou zerado, a média usa o período configurado (padrão de 30 dias). Os pedidos, a cobertura e o excesso usam essa mesma média. Quando o divisor é o 035, a cobertura representa dias no ritmo dos dias com venda. Em 30 dias, 360 unidades com 12 por caixa representam 30 caixas vendidas e média de 1 caixa por dia.</p><p><strong>Média da água sanitária em 30 dias</strong></p><ol><li>841 UN ÷ 30 = 28,0333 UN/dia. Dividindo por 6 UN/Cx, a média é aproximadamente 4,6722 Cx/dia.</li><li>Para um produto em Kg, 90 Kg ÷ 30 dias = 3 Kg/dia. As próximas contas usam a média sem arredondar.</li></ol></details>
 <details><summary>Curva ABC</summary><p>O painel ordena os HOSTs pela contribuição no grupo filtrado. Com o campo 001 ativo, usa o faturamento. Nos demais casos, usa caixas vendidas. A classe A inclui o item que alcança 80% do acumulado, B segue até 95% e C reúne o restante. Alterar o fornecedor ou filtro operacional pode mudar a curva e o pedido.</p><p><strong>Participação no faturamento do grupo filtrado</strong></p><ol><li>Três HOSTs faturaram R$ 800, R$ 150 e R$ 50. Total = R$ 1.000.</li><li>O primeiro soma 80% e fica em A. O segundo leva o acumulado a 95% e fica em B. Os 5% restantes ficam em C.</li></ol></details>
 <details><summary>Cobertura, gôndola e pulmão</summary><p>Cobertura em caixas = média diária × dias da curva. Os padrões ajustáveis são A = 7, B = 10 e C = 14 dias. A meta já inclui a área de vendas e o pulmão.</p><p><strong>Meta de um produto da curva A</strong></p><ol><li>Com média de 3 Kg/dia e meta A de 7 dias, a necessidade é 3 × 7 = 21 Kg.</li><li>Se configurar A para 9 dias, a meta passa a 3 × 9 = 27 Kg. A exposição e o pulmão já estão incluídos.</li></ol></details>
 <details><summary>Pedido Direto</summary><p>A venda média diária multiplicada pelos dias da curva A, B ou C define a meta. O estoque da loja pode ser vendido durante o prazo de entrega e não é descontado dessa meta. O trânsito reduz o pedido e uma pendência ativa bloqueia nova sugestão. Use Importar ERP de fornecedor direto para acrescentar ou atualizar produtos por HOST. Esses produtos podem gerar compra direta com qualquer saldo no depósito. No ERP geral, -*- também identifica abastecimento direto. Com venda de 10 Kg/dia e curva A de 7 dias, o pedido é 70 Kg mesmo com 60 Kg na loja. Com 10 Kg em trânsito, o pedido passa a 60 Kg. A coluna usa Kg quando CX/CAIXA é 1 e Cx quando é maior que 1.</p></details><details><summary>Pedido CD</summary><p>Da meta total da curva, subtraia estoque da loja em caixas, pendências (153) e trânsito (154). Cada campo logístico desativado entra como zero. No exemplo de 1 caixa/dia, um item A com 3 caixas na loja, sem pendências e com 2 caixas em trânsito pede 7 − 3 − 2 = 2 caixas.</p><p><strong>Da meta ao pedido de água sanitária</strong></p><ol><li>Considere o item na curva A com 7 dias, CD disponível, sem pendência e com 2 Cx em trânsito. Meta = (841 ÷ 6 ÷ 30) × 7 ≈ 32,71 Cx.</li><li>Pedido = 32,71 − 1,5 em estoque − 2 em trânsito ≈ 29,21 Cx. Arredondando para cima, o pedido CD é 30 Cx. Se houver pendência positiva com o campo 153 ativo, o pedido CD é zero.</li></ol></details>
@@ -534,7 +534,7 @@ const CAMPOS_ERP=[
  {id:"f001",seq:"001",nome:"Valor Venda",uso:"Curva ABC por faturamento e margem",chave:"valorVendaERP"},
  {id:"f002",seq:"002",nome:"Quantidade Vendida em Unidade",uso:"Média de venda",chave:"vendaUnidade",fixo:true},
  {id:"f003",seq:"003",nome:"Custo Venda",uso:"Valor do pedido pelo custo e margem",chave:"custoVendaERP"},
- {id:"f035",seq:"035",nome:"Dias de venda",uso:"Dias em que o item vendeu no período do relatório",chave:"diasVendaERP"},
+ {id:"f035",seq:"035",nome:"Dias de venda",uso:"Base da média diária, dos pedidos e da cobertura por item",chave:"diasVendaERP"},
  {id:"f049",seq:"049",nome:"Estoque em Unidade",uso:"Estoque da loja",chave:"estoqueLojaUnidade",fixo:true},
  {id:"f052",seq:"052",nome:"Estoque a Custo com ICMS",uso:"Indicador de estoque em R$",chave:"estoqueCustoERP"},
  {id:"f153",seq:"153",nome:"Pedidos Pendentes (CX)",uso:"Desconta pendências do pedido",chave:"pendenteCaixa"},
@@ -795,7 +795,12 @@ function quantidadeSugerida(p,final){
  if(semCadastro||alertas.includes("QUANTIDADE POR CAIXA INVÁLIDA")||num(p.quantidadeCaixa)<=0||final==null)return 0;
  return Math.max(0,final);
 }
-function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidade),pend=pendenteUsado(p),trans=transitoUsado(p),cx=num(p.quantidadeCaixa),abc=String(p.abc??"a").trim().toUpperCase(),days=abc==="A"?state.config.diasA:abc==="B"?state.config.diasB:state.config.diasC,period=Math.max(1,state.config.periodoVenda);
+function diasBaseDaMedia(p){
+ const dias=p.diasVendaERP;
+ if(campoAtivo("f035")&&Number.isSafeInteger(dias)&&dias>0)return dias;
+ return Math.max(1,state.config.periodoVenda);
+}
+function calc(p){const venda=num(p.vendaUnidade),estoque=num(p.estoqueLojaUnidade),pend=pendenteUsado(p),trans=transitoUsado(p),cx=num(p.quantidadeCaixa),abc=String(p.abc??"a").trim().toUpperCase(),days=abc==="A"?state.config.diasA:abc==="B"?state.config.diasB:state.config.diasC,period=diasBaseDaMedia(p);
  const valid=cx>0,avg=valid?(venda/cx)/period:null,stock=valid?estoque/cx:null;
  const cobertura=valid?avg*days:0;
  const area=(avg??0)*2;
@@ -1054,7 +1059,7 @@ function renderExcesso(limiteImpressao){
  const disponiveis=linhas.length;
  if(Number.isInteger(limiteImpressao)&&limiteImpressao<disponiveis)linhas.length=limiteImpressao;
  for(const linha of linhas)contagem[linha.abc]++;
- $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} Kg ou Cx/dia · Cobertura mínima: ${dias.value||0} dias · Excesso mínimo: ${minCx.value||0} Kg ou Cx · Valor mínimo: ${minValor.value===""?"sem limite":money(minValor.valueAsNumber)} · Ordem: ${ordem.selectedOptions[0].textContent} · Período de vendas: ${state.config.periodoVenda} dias · Linhas: ${linhas.length} de ${disponiveis}`;
+ $("excessoContexto").textContent=`Curva: ${curva||"Todas"} · Venda máxima: ${venda.value||"sem limite"} Kg ou Cx/dia · Cobertura mínima: ${dias.value||0} dias · Excesso mínimo: ${minCx.value||0} Kg ou Cx · Valor mínimo: ${minValor.value===""?"sem limite":money(minValor.valueAsNumber)} · Ordem: ${ordem.selectedOptions[0].textContent} · Base da média: ${campoAtivo("f035")?"dias com venda por item, com período alternativo de ":""}${state.config.periodoVenda} dias · Linhas: ${linhas.length} de ${disponiveis}`;
  $("excessoResumo").textContent="Curva A: "+contagem.A+" · Curva B: "+contagem.B+" · Curva C: "+contagem.C;
  const totais=totalPorUnidade(linhas.map(l=>l.p),p=>p.estoqueLojaCx-p.necessidadeCaixa);
  let valor=0,semCusto=0;
@@ -1264,9 +1269,9 @@ function teclaCalc(k){
 }
 function abrirCalc(p){
  calc$.expr="";
- const cx=num(p.quantidadeCaixa),period=Math.max(1,state.config.periodoVenda),valid=cx>0;
+ const cx=num(p.quantidadeCaixa),valid=cx>0;
  const chips=[["Sugestão",p.pedidoSugestao,unidadePedido(p)]];
- if(valid){chips.push(["Venda/dia",num(p.vendaUnidade)/cx/period,unidadePedido(p)],["Estoque",num(p.estoqueLojaUnidade)/cx,unidadePedido(p)]);const pt=pendenteUsado(p)+transitoUsado(p);if(pt)chips.push(["Pend.+trâns.",pt,unidadePedido(p)])}
+ if(valid){chips.push(["Venda/dia",p.mediaVendaCxDia,unidadePedido(p)],["Estoque",num(p.estoqueLojaUnidade)/cx,unidadePedido(p)]);const pt=pendenteUsado(p)+transitoUsado(p);if(pt)chips.push(["Pend.+trâns.",pt,unidadePedido(p)])}
  const n=v=>String(Math.round(v*100)/100).replace(".",",");
  $("calcChips").innerHTML=chips.map(([r,v,u])=>`<button type="button" data-calc-insert="${n(v)}" title="Inserir na conta">${r} <b>${quantidadeExibida(p,v,true)}</b></button>`).join("")+(valid&&cx!==1?`<button type="button" data-calc-insert="÷${n(cx)}" title="Converter unidades em caixas">÷ ${fmtCalc(cx)} un/cx</button>`:"");
  renderCalc();
