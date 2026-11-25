@@ -23,12 +23,13 @@ async function checkManualCalculator(page) {
   });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Bases atualizadas'));
   const report = [
-    'Ordem\tChave\tDescricao\tQtde Venda\tEstoque (Un)\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)',
+    'Ordem\tChave\tDescricao\tQtde Venda\tDias Venda\tEstoque (Un)\tQtde Ped.Pend (CX)\tQtde Est.Transito (CX)\tEst. Deposito (Cx)',
     '\tTotal\tTotal\t0\t0\t00 x 001,0 + 000\t00 x 001,0 + 000\t00 x 001,0 + 000', '',
-    ['1', '801', 'CALCULADORA', '360', '24', '00 x 012,0 + 000', '00 x 012,0 + 000', '30 x 001,0 + 000'].join('\t'),
+    ['1', '801', 'CALCULADORA', '360', '12', '24', '00 x 012,0 + 000', '00 x 012,0 + 000', '30 x 001,0 + 000'].join('\t'),
   ].join('\r\n');
   await page.locator('#erpFile').setInputFiles({ name: 'calc.xls', mimeType: 'text/tab-separated-values', buffer: Buffer.from(report, 'latin1') });
   await page.waitForFunction(() => /ERP importado: 1/.test(document.querySelector('#notice').textContent));
+  assert.equal(await page.locator('#rows tr').first().locator('td').last().innerText(), '12');
   const edit = page.locator('#rows [data-edit-code="801"]');
   await edit.click();
   await page.waitForSelector('#manualEditModal.open');
@@ -781,11 +782,12 @@ async function checkViewport(browser, width) {
     assert.equal((await page.locator('#kProducts').innerText()).trim(), '3');
     assert.deepEqual(await page.locator('#products th').allTextContents(), [
       'HOST', 'DESCRIÇÃO', 'VENDA (UN/Kg)', 'ESTOQUE (UN/Kg)', 'CD (Kg/Cx)', 'SITUAÇÃO',
-      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO CD', 'FORNECEDOR', 'MARGEM', 'ALERTAS', 'COBERTURA ESTOQUE (DIAS)', 'COBERTURA PEDIDO (DIAS)', 'ESTOQUE + PEDIDO (DIAS)', 'PEDIDO DIRETO',
+      'PASTA', 'CX/CAIXA', 'ABC', 'PEDIDO CD', 'FORNECEDOR', 'MARGEM', 'ALERTAS', 'COBERTURA ESTOQUE (DIAS)', 'COBERTURA PEDIDO (DIAS)', 'ESTOQUE + PEDIDO (DIAS)', 'PEDIDO DIRETO', 'DIAS COM VENDA',
     ]);
     const firstProduct = page.locator('#rows tr').first();
     const cells = await firstProduct.locator('td').allTextContents();
-    assert.equal(cells.length, 17);
+    assert.equal(cells.length, 18);
+    assert.equal(cells[17], '—');
     assert.equal(cells[0], '384667');
     assert.equal(cells[7], '1 Kg');
     assert.deepEqual(cells.slice(2, 6), ['10 Kg', '0 Kg', '0', 'RUPTURA CD']);
